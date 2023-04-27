@@ -9,7 +9,6 @@ from slack_sdk.errors import SlackApiError
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-# インスタンス化
 sched = BlockingScheduler(
     executors={
         "threadpool": ThreadPoolExecutor(max_workers=5),
@@ -86,10 +85,6 @@ def sendMessageToSlack(channel, message, attachments=json.dumps([])):
         print("sendMessageToSlack(): successfully sent message to " + channel)
 
 
-def sendStatus():
-    sendMessageToSlack("#general", "Bot is running")
-
-
 def sendTasks(tasks):
     message = "未提出の課題: " + str(len(tasks)) + " 件"
     data = []
@@ -105,13 +100,6 @@ def sendTasks(tasks):
     sendMessageToSlack("#itclms-tasks", message, json.dumps(data))
 
 
-@sched.scheduled_job("cron", minute="0", hour="0", executor="threadpool")
-def scheduled_job():
-    print("----- sendStatus started -----")
-    sendStatus()
-    print("----- sendStatus done -----")
-
-
 @sched.scheduled_job("cron", minute="0", hour="9", executor="threadpool")
 def scheduled_job():
     print("----- sendTasks started -----")
@@ -119,6 +107,5 @@ def scheduled_job():
     print("----- sendTasks done -----")
 
 
-# おまじない
 sched.start()
 print("ITC-LMS: Bot initialized")
