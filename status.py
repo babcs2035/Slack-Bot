@@ -1,16 +1,10 @@
 import os
 import json
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from apscheduler.schedulers.blocking import BlockingScheduler
+import psutil
+import platform
+from datetime import datetime
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-
-sched = BlockingScheduler(
-    executors={
-        "threadpool": ThreadPoolExecutor(max_workers=5),
-        "processpool": ProcessPoolExecutor(max_workers=1),
-    }
-)
 
 print("status: Bot started")
 
@@ -25,16 +19,43 @@ def sendMessageToSlack(channel, message, attachments=json.dumps([])):
         print("sendMessageToSlack(): successfully sent message to " + channel)
 
 
+def get_size(bytes, suffix="B"):
+    factor = 1024
+    for unit in ["", "K", "M", "G", "T", "P"]:
+        if bytes < factor:
+            return f"{bytes:.2f}{unit}{suffix}"
+        bytes /= factor
+
+
 def sendStatus():
-    sendMessageToSlack("#general", "Bot is running")
+    message = "*<<System Info>>*\n"
+    uname = platform.uname()
+    message += f"*System*\t{uname.system}\n"
+    message += f"*Node Name*\t{uname.node}\n"
+    message += f"*Release*\t{uname.release}\n"
+    message += f"*Version*\t{uname.version}\n"
+    message += f"*Machine*\t{uname.machine}\n"
+    message += f"*Processor*\t{uname.processor}\n"
+
+    boot_time_timestamp = psutil.boot_time()
+    bt = datetime.fromtimestamp(boot_time_timestamp)
+    message += f"*Boot Time*\t{bt.year}/{bt.month}/{bt.day} {bt.hour}:{bt.minute}:{bt.second}\n"
+
+    cpufreq = psutil.cpu_freq()
+    message += f"*CPU*\t{psutil.cpu_percent()}% {cpufreq.current:.2f}Mhz\n"
+
+    svmem = psutil.virtual_memory()
+    message += f"*Memory*\t{get_size(svmem.used)}/{get_size(svmem.total)} ({svmem.percent}%)\n"
+
+    partitions = psutil.disk_partitions()
+    for partition in partitions:
+        try:
+            partition_usage = psutil.disk_usage(partition.mountpoint)
+        except PermissionError:
+            continue
+        message += f"*Disk*\t{partition.device} {get_size(partition_usage.used)}/{get_size(partition_usage.total)} ({partition_usage.percent}%)\n"
+
+    sendMessageToSlack("#status", message)
 
 
-@sched.scheduled_job("interval", minutes=1, executor="threadpool")
-def scheduled_job():
-    print("----- sendStatus started -----")
-    sendStatus()
-    print("----- sendStatus done -----")
-
-
-sched.start()
 print("status: Bot initialized")
