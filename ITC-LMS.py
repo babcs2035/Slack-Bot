@@ -22,12 +22,10 @@ print("ITC-LMS: Bot started")
 def init():
     print("init(): started")
 
-    # options = Options()
-    # options.add_argument('--headless')
-    # options.add_argument('--disable-gpu')
-    # options.add_argument('--no-sandbox')
-    # driver = webdriver.Chrome(chrome_options = options)
-    driver = webdriver.Chrome()
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--window-size=1280,1080')
+    driver = webdriver.Chrome("/usr/bin/chromedriver", options = options)
 
     driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/saml/login?disco=true")
 
