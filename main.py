@@ -15,7 +15,7 @@ sched = BlockingScheduler(
 print("main: Bot started")
 
 
-@sched.scheduled_job("interval", minutes=1, executor="threadpool")
+@sched.scheduled_job("cron", minute="0", hour="0", executor="threadpool")
 def scheduled_job():
     print("----- sendStatus started -----")
     status.sendStatus()
