@@ -23,9 +23,9 @@ def init():
     print("init(): started")
 
     options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--window-size=1280,1080')
-    driver = webdriver.Chrome("/usr/bin/chromedriver", options = options)
+    options.add_argument("--headless")
+    options.add_argument("--window-size=1280,1080")
+    driver = webdriver.Chrome("/usr/bin/chromedriver", options=options)
 
     driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/saml/login?disco=true")
 
@@ -98,7 +98,7 @@ def sendTasks(tasks):
     sendMessageToSlack("#itclms-tasks", message, json.dumps(data))
 
 
-@sched.scheduled_job("cron", minute="0", hour="9", executor="threadpool")
+@sched.scheduled_job("cron", minute="0", hour="9, 18", executor="threadpool")
 def scheduled_job():
     print("----- sendTasks started -----")
     sendTasks(getTaskList(init()))
