@@ -4,6 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.chrome import service as fs
 from bs4 import BeautifulSoup
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -26,7 +27,8 @@ def init():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--window-size=1280,1080")
-    driver = webdriver.Chrome("/usr/bin/chromedriver", options=options)
+    chrome_service = fs.Service(executable_path="/usr/bin/chromedriver")
+    driver = webdriver.Chrome(service=chrome_service, options=options)
 
     driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/saml/login?disco=true")
 
