@@ -145,7 +145,8 @@ def sendUpdates(updates):
                     "text": update["info"],
                 }
             )
-    sendMessageToSlack("#itclms-updates", "", json.dumps(sendLists))
+    if len(sendLists) > 0:
+        sendMessageToSlack("#itclms-updates", "", json.dumps(sendLists))
 
     data = updates
     with open("data/LMS/updates.pkl", "wb") as f:
@@ -159,7 +160,7 @@ def scheduled_job():
     print("----- sendTasks done -----")
 
 
-@sched.scheduled_job("interval", minutes=15, executor="threadpool")
+@sched.scheduled_job("cron", minute="0,10,20,30,40,50", executor="threadpool")
 def scheduled_job():
     print("----- sendUpdates started -----")
     sendUpdates(getUpdates(init()))
