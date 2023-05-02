@@ -159,7 +159,7 @@ def scheduled_job():
     print("----- sendTasks done -----")
 
 
-@sched.scheduled_job("interval", minutes="15", executor="threadpool")
+@sched.scheduled_job("interval", minutes=15, executor="threadpool")
 def scheduled_job():
     print("----- sendUpdates started -----")
     sendUpdates(getUpdates(init()))
