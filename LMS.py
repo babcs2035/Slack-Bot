@@ -1,5 +1,6 @@
 ﻿import os
 import json
+import pickle
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -102,11 +103,67 @@ def sendTasks(tasks):
     sendMessageToSlack("#itclms-tasks", message, json.dumps(data))
 
 
+def getUpdates(driver):
+    driver.get(
+        "https://itc-lms.ecc.u-tokyo.ac.jp/updateinfo?openStatus=0&selectedUpdInfoButton=2"
+    )
+    soup = BeautifulSoup(driver.page_source, "html.parser")
+    updates = soup.find_all("div", class_="updateTableContents updateResultList")
+
+    updateList = []
+    for update in updates:
+        data = update.contents[3].contents[1].contents
+        updateList.append(
+            {
+                "date": data[3].text.replace("\n", ""),
+                "course": data[5].text.replace("\n", ""),
+                "content": data[7].text.replace("\n", ""),
+                "info": data[9].text.replace("\n", "")[1:-18],
+                "link": "https://itc-lms.ecc.u-tokyo.ac.jp"
+                + data[9].contents[1].attrs["value"],
+            }
+        )
+    return updateList
+
+
+def sendUpdates(updates):
+    data = []
+    try:
+        with open("data/LMS/updates.pkl", "rb") as f:
+            data = pickle.load(f)
+    except:
+        print("sendUpdates(): updates.pkl open error")
+
+    sendLists = []
+    for update in updates:
+        if not (update in data):
+            sendLists.append(
+                {
+                    "color": "good",
+                    "title": update["course"],
+                    "title_link": update["link"],
+                    "text": update["info"],
+                }
+            )
+    sendMessageToSlack("#itclms-updates", "", json.dumps(sendLists))
+
+    data = updates
+    with open("data/LMS/updates.pkl", "wb") as f:
+        pickle.dump(data, f)
+
+
 @sched.scheduled_job("cron", minute="0", hour="9, 18", executor="threadpool")
 def scheduled_job():
     print("----- sendTasks started -----")
     sendTasks(getTaskList(init()))
     print("----- sendTasks done -----")
+
+
+@sched.scheduled_job("interval", minutes="15", executor="threadpool")
+def scheduled_job():
+    print("----- sendUpdates started -----")
+    sendUpdates(getUpdates(init()))
+    print("----- sendUpdates done -----")
 
 
 sched.start()
