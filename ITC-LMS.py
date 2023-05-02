@@ -3,6 +3,7 @@ import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
 from bs4 import BeautifulSoup
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -36,6 +37,7 @@ def init():
     input_password.send_keys(os.environ["ITCLMS_PASSWORD"])
 
     button_login = driver.find_element(By.CLASS_NAME, "submit")
+    ActionChains(driver).move_to_element(button_login).perform()
     button_login.click()
 
     button_yes = driver.find_element(By.ID, "idSIButton9")
