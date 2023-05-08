@@ -156,14 +156,18 @@ def sendUpdates(updates):
 @sched.scheduled_job("cron", minute="0", hour="9, 18", executor="threadpool")
 def scheduled_job():
     print("----- sendTasks started -----")
-    sendTasks(getTaskList(init()))
+    driver = init()
+    sendTasks(getTaskList(driver))
+    driver.quit()
     print("----- sendTasks done -----")
 
 
 @sched.scheduled_job("cron", minute="0,10,20,30,40,50", executor="threadpool")
 def scheduled_job():
     print("----- sendUpdates started -----")
-    sendUpdates(getUpdates(init()))
+    driver = init()
+    sendUpdates(getUpdates(driver))
+    driver.quit()
     print("----- sendUpdates done -----")
 
 
