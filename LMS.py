@@ -31,23 +31,28 @@ def init():
     chrome_service = fs.Service(executable_path="/usr/bin/chromedriver")
     driver = webdriver.Chrome(service=chrome_service, options=options)
 
-    driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/saml/login?disco=true")
+    try:
+        driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/saml/login?disco=true")
 
-    input_id = driver.find_element(By.NAME, "UserName")
-    input_password = driver.find_element(By.NAME, "Password")
+        input_id = driver.find_element(By.NAME, "UserName")
+        input_password = driver.find_element(By.NAME, "Password")
 
-    input_id.send_keys(os.environ["ITCLMS_ID"])
-    input_password.send_keys(os.environ["ITCLMS_PASSWORD"])
+        input_id.send_keys(os.environ["ITCLMS_ID"])
+        input_password.send_keys(os.environ["ITCLMS_PASSWORD"])
 
-    button_login = driver.find_element(By.CLASS_NAME, "submit")
-    ActionChains(driver).move_to_element(button_login).perform()
-    button_login.click()
+        button_login = driver.find_element(By.CLASS_NAME, "submit")
+        ActionChains(driver).move_to_element(button_login).perform()
+        button_login.click()
 
-    button_yes = driver.find_element(By.ID, "idSIButton9")
-    button_yes.click()
+        button_yes = driver.find_element(By.ID, "idSIButton9")
+        button_yes.click()
 
-    print("init(): done")
-    return driver
+        print("init(): done")
+        return driver
+
+    except Exception as e:
+        print("init(): " + str(e))
+        return None
 
 
 def getTaskList(driver):
@@ -157,8 +162,9 @@ def sendUpdates(updates):
 def scheduled_job():
     print("----- sendTasks started -----")
     driver = init()
-    sendTasks(getTaskList(driver))
-    driver.quit()
+    if driver != None:
+        sendTasks(getTaskList(driver))
+        driver.quit()
     print("----- sendTasks done -----")
 
 
@@ -166,8 +172,9 @@ def scheduled_job():
 def scheduled_job():
     print("----- sendUpdates started -----")
     driver = init()
-    sendUpdates(getUpdates(driver))
-    driver.quit()
+    if driver != None:
+        sendUpdates(getUpdates(driver))
+        driver.quit()
     print("----- sendUpdates done -----")
 
 
