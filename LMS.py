@@ -8,15 +8,6 @@ from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from apscheduler.schedulers.blocking import BlockingScheduler
-
-sched = BlockingScheduler(
-    executors={
-        "threadpool": ThreadPoolExecutor(max_workers=5),
-        "processpool": ProcessPoolExecutor(max_workers=1),
-    }
-)
 
 print("ITC-LMS: Bot started")
 
@@ -149,9 +140,16 @@ def sendUpdates(updates):
     sendLists = []
     for update in updates:
         if not (update in data):
+            colorStr = "#f5f5f5"
+            if update["course"] == "課題" or update["course"] == "テスト":
+                colorStr = "danger"
+            if update["course"] == "お知らせ":
+                colorStr = "warning"
+            if update["course"] == "資料":
+                colorStr = "good"
             sendLists.append(
                 {
-                    "color": "good",
+                    "color": colorStr,
                     "title": update["course"],
                     "title_link": update["link"],
                     "text": update["info"],
