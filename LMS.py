@@ -150,11 +150,11 @@ def sendUpdates(updates):
     for update in updates:
         if not (update in data):
             colorStr = "#f5f5f5"
-            if update["course"] == "課題" or update["course"] == "テスト":
+            if update["content"] == "課題" or update["content"] == "テスト":
                 colorStr = "danger"
-            if update["course"] == "お知らせ":
+            if update["content"] == "お知らせ" or update["content"] == "担当教員へのメッセージ" or update["content"] == "アンケート" or update["content"] == "掲示板":
                 colorStr = "warning"
-            if update["course"] == "教材":
+            if update["content"] == "教材":
                 colorStr = "good"
             sendLists.append(
                 {
