@@ -8,6 +8,15 @@ from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+from apscheduler.schedulers.blocking import BlockingScheduler
+
+sched = BlockingScheduler(
+    executors={
+        "threadpool": ThreadPoolExecutor(max_workers=5),
+        "processpool": ProcessPoolExecutor(max_workers=1),
+    }
+)
 
 print("ITC-LMS: Bot started")
 
