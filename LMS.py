@@ -154,7 +154,7 @@ def sendUpdates(updates):
                 colorStr = "danger"
             if update["course"] == "お知らせ":
                 colorStr = "warning"
-            if update["course"] == "資料":
+            if update["course"] == "教材":
                 colorStr = "good"
             sendLists.append(
                 {
