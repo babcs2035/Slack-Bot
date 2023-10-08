@@ -176,11 +176,12 @@ def sendUpdates(updates):
         sendMessageToSlack("#itclms-updates", "", json.dumps(sendLists))
 
     data = updates
+    os.makedirs("data/LMS", exist_ok=True)
     with open("data/LMS/updates.pkl", "wb") as f:
         pickle.dump(data, f)
 
 
-@sched.scheduled_job("cron", minute="0", hour="9, 18", executor="threadpool")
+@sched.scheduled_job("cron", minute="15", hour="8, 19", executor="threadpool")
 def scheduled_job():
     print("LMS: ----- sendTasks started -----")
     driver = init()
