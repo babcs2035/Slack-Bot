@@ -24,7 +24,7 @@ print("ITC-LMS: Bot started")
 def init():
     print("init(): started")
 
-    userdata_dir = "selenium" # カレントディレクトリの直下に作る場合
+    userdata_dir = "selenium"
     os.makedirs(userdata_dir, exist_ok=True)
     
     options = Options()
@@ -65,6 +65,7 @@ def init():
 
 def getTaskList(driver):
     driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/lms/task")
+    sleep(5)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     tasks = soup.find_all("div", class_="result_list_line")
 
@@ -119,6 +120,7 @@ def getUpdates(driver):
     driver.get(
         "https://itc-lms.ecc.u-tokyo.ac.jp/updateinfo?openStatus=0&selectedUpdInfoButton=2"
     )
+    sleep(5)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     updates = soup.find_all("div", class_="updateTableContents updateResultList")
 

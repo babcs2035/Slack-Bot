@@ -1,0 +1,24 @@
+name: deploy
+on:
+    push:
+        branches:
+            - master
+    workflow_dispatch:
+jobs:
+    deploy:
+        runs-on: ubuntu-22.04
+        steps:
+            - uses: actions/checkout@v3
+            - name: deploy via ssh
+              uses: appleboy/ssh-action@master
+              with:
+                  key: ${{ secrets.SK }}
+                  host: ${{secrets.SSH_HOST}}
+                  username: ${{secrets.SSH_USERNAME}}
+                  port: ${{secrets.SSH_PORT}}
+                  script: |
+                      echo Started to deploy...
+                      cd ~/bots/Slack-Bot/
+                      git pull
+                      ~/.volta/bin/pm2 restart Slack-Bot
+                      echo Done!

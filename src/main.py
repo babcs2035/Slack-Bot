@@ -1,7 +1,7 @@
 import subprocess
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-import status
+import src.status as status
 from dotenv import load_dotenv
 
 load_dotenv()
