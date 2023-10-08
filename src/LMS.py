@@ -18,48 +18,48 @@ sched = BlockingScheduler(
     }
 )
 
-print("ITC-LMS: Bot started")
+print("LMS: Bot started")
 
 
 def init():
-    print("init(): started")
+    print("LMS: init() started")
 
     userdata_dir = "selenium"
     os.makedirs(userdata_dir, exist_ok=True)
-    
+
     options = Options()
     options.add_argument("--user-data-dir=" + userdata_dir)
-    options.add_argument('--headless')
-    options.add_argument('--window-size=1280,1080')
-    driver = webdriver.Chrome("/usr/bin/chromedriver", options = options)
+    options.add_argument("--headless")
+    options.add_argument("--window-size=1280,1080")
+    driver = webdriver.Chrome("/usr/bin/chromedriver", options=options)
 
     try:
         driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/saml/login?disco=true")
         if driver.title != "lms":
             input_id = driver.find_element(By.NAME, "UserName")
             input_password = driver.find_element(By.NAME, "Password")
-            
+
             input_id.send_keys(os.environ["ITCLMS_ID"])
             input_password.send_keys(os.environ["ITCLMS_PASSWORD"])
-            
+
             button_login = driver.find_element(By.CLASS_NAME, "submit")
             button_login.click()
             sleep(5)
-            
+
             while driver.current_url == "https://login.microsoftonline.com/login.srf":
                 onetime_code = driver.find_element(By.ID, "idRichContext_DisplaySign")
-                print("ontime code issued: ", onetime_code.text)
+                print("LMS: init() onetime code issued ", onetime_code.text)
                 sleep(5)
             check_button = driver.find_element(By.ID, "KmsiCheckboxField")
             check_button.click()
             button_yes = driver.find_element(By.ID, "idSIButton9")
             button_yes.click()
-            
-        print("init(): done")
+
+        print("LMS: init() done")
         return driver
 
     except Exception as e:
-        print("init(): " + str(e))
+        print("LMS: init() error... " + str(e))
         return None
 
 
@@ -97,9 +97,9 @@ def sendMessageToSlack(channel, message, attachments=json.dumps([])):
         client = WebClient(token=os.environ["SLACK_TOKEN"])
         client.chat_postMessage(channel=channel, text=message, attachments=attachments)
     except Exception as e:
-        print("sendMessageToSlack(): " + str(e))
+        print("LMS: sendMessageToSlack() error... " + str(e))
     else:
-        print("sendMessageToSlack(): successfully sent message to " + channel)
+        print("LMS: sendMessageToSlack() successfully sent message to " + channel)
 
 
 def sendTasks(tasks):
@@ -115,7 +115,8 @@ def sendTasks(tasks):
             }
         )
     sendMessageToSlack("#itclms-tasks", message, json.dumps(data))
-    
+
+
 def getUpdates(driver):
     driver.get(
         "https://itc-lms.ecc.u-tokyo.ac.jp/updateinfo?openStatus=0&selectedUpdInfoButton=2"
@@ -146,7 +147,7 @@ def sendUpdates(updates):
         with open("data/LMS/updates.pkl", "rb") as f:
             data = pickle.load(f)
     except:
-        print("sendUpdates(): updates.pkl open error")
+        print("LMS: sendUpdates() updates.pkl open error")
 
     sendLists = []
     for update in updates:
@@ -154,7 +155,12 @@ def sendUpdates(updates):
             colorStr = "#f5f5f5"
             if update["content"] == "課題" or update["content"] == "テスト":
                 colorStr = "danger"
-            if update["content"] == "お知らせ" or update["content"] == "担当教員へのメッセージ" or update["content"] == "アンケート" or update["content"] == "掲示板":
+            if (
+                update["content"] == "お知らせ"
+                or update["content"] == "担当教員へのメッセージ"
+                or update["content"] == "アンケート"
+                or update["content"] == "掲示板"
+            ):
                 colorStr = "warning"
             if update["content"] == "教材":
                 colorStr = "good"
@@ -176,22 +182,22 @@ def sendUpdates(updates):
 
 @sched.scheduled_job("cron", minute="0", hour="9, 18", executor="threadpool")
 def scheduled_job():
-    print("----- sendTasks started -----")
+    print("LMS: ----- sendTasks started -----")
     driver = init()
     if driver != None:
         sendTasks(getTaskList(driver))
         driver.quit()
-    print("----- sendTasks done -----")
+    print("LMS: ----- sendTasks done -----")
 
 
 @sched.scheduled_job("cron", minute="0,10,20,30,40,50", executor="threadpool")
 def scheduled_job():
-    print("----- sendUpdates started -----")
+    print("LMS: ----- sendUpdates started -----")
     driver = init()
     if driver != None:
         sendUpdates(getUpdates(driver))
         driver.quit()
-    print("----- sendUpdates done -----")
+    print("LMS: ----- sendUpdates done -----")
 
 
 sched.start()
