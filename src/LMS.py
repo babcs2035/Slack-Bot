@@ -31,7 +31,7 @@ def init():
     options.add_argument("--user-data-dir=" + userdata_dir)
     options.add_argument("--headless")
     options.add_argument("--window-size=1280,1080")
-    driver = webdriver.Chrome("/usr/bin/chromedriver", options=options)
+    driver = webdriver.Chrome(options=options)
 
     try:
         driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/saml/login?disco=true")
