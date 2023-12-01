@@ -30,7 +30,7 @@ def init():
     options = Options()
     options.add_argument("--user-data-dir=" + userdata_dir)
     options.add_argument("--headless")
-    options.add_argument("--window-size=1280,1080")
+    options.add_argument("--window-size=1920,1280")
     driver = webdriver.Chrome(options=options)
 
     try:
