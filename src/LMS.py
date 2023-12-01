@@ -47,11 +47,17 @@ def init():
             sleep(5)
 
             if driver.current_url == "https://login.microsoftonline.com/login.srf":
+                print("LMS: init() /login.srf")
                 button_yes = driver.find_element(By.ID, "idSIButton9")
-                button_yes.click()
+                action = webdriver.common.action_chains.ActionChains(driver)
+                action.move_to_element_with_offset(button_yes, 5, 5)
+                action.click()
+                action.perform()
+                # button_yes.click()
                 sleep(5)
 
             while driver.current_url == "https://login.microsoftonline.com/appverify":
+                print("LMS: init() /appverify")
                 onetime_code = driver.find_element(By.ID, "idRichContext_DisplaySign")
                 print("LMS: init() onetime code issued ", onetime_code.text)
                 sleep(5)
