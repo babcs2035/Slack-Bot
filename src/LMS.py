@@ -47,6 +47,12 @@ def init():
             sleep(5)
 
             while driver.current_url == "https://login.microsoftonline.com/login.srf":
+                try:
+                    button_yes = driver.find_element(By.ID, "idSIButton9")
+                    button_yes.click()
+                    sleep(5)
+                except:
+                    pass
                 onetime_code = driver.find_element(By.ID, "idRichContext_DisplaySign")
                 print("LMS: init() onetime code issued ", onetime_code.text)
                 sleep(5)
