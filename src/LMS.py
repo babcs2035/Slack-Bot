@@ -46,16 +46,16 @@ def init():
             button_login.click()
             sleep(5)
 
-            flag = True
-            while driver.current_url == "https://login.microsoftonline.com/login.srf":
-                if flag:
-                    button_yes = driver.find_element(By.ID, "idSIButton9")
-                    button_yes.click()
-                    flag = False
-                    sleep(5)
+            if driver.current_url == "https://login.microsoftonline.com/login.srf":
+                button_yes = driver.find_element(By.ID, "idSIButton9")
+                button_yes.click()
+                sleep(5)
+
+            while driver.current_url == "https://login.microsoftonline.com/appverify":
                 onetime_code = driver.find_element(By.ID, "idRichContext_DisplaySign")
                 print("LMS: init() onetime code issued ", onetime_code.text)
                 sleep(5)
+
             check_button = driver.find_element(By.ID, "KmsiCheckboxField")
             check_button.click()
             button_yes = driver.find_element(By.ID, "idSIButton9")
