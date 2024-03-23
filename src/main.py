@@ -5,7 +5,7 @@ load_dotenv()
 
 print("main: Bot started")
 
-subprocess.Popen(["python3", "-u", "src/LMS.py"])
+subprocess.Popen(["python3", "-u", "src/UTOL.py"])
 
 print("main: Bot initialized")
 

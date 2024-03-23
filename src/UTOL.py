@@ -18,11 +18,11 @@ sched = BlockingScheduler(
     }
 )
 
-print("LMS: Bot started")
+print("UTOL: Bot started")
 
 
 def init():
-    print("LMS: init() started")
+    print("UTOL: init() started")
 
     userdata_dir = "selenium"
     os.makedirs(userdata_dir, exist_ok=True)
@@ -34,32 +34,38 @@ def init():
     driver = webdriver.Chrome(options=options)
 
     try:
-        driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/saml/login?disco=true")
-        if driver.title != "lms":
-            input_id = driver.find_element(By.NAME, "UserName")
+        driver.get("https://utol.ecc.u-tokyo.ac.jp/saml/login?disco=true")
+        if driver.title != "時間割":
+            sleep(5)
+
+            print("UTOL: init() input UTOKYO_ID")
+            input_id = driver.find_element(By.NAME, "loginfmt")
+            input_id.send_keys(os.environ["UTOKYO_ID"])
+            button_next = driver.find_element(By.ID, "idSIButton9")
+            button_next.click()
+            sleep(5)
+
+            print("UTOL: init() input UTOKYO_ID & PASSWORD")
             input_password = driver.find_element(By.NAME, "Password")
-
-            input_id.send_keys(os.environ["ITCLMS_ID"])
-            input_password.send_keys(os.environ["ITCLMS_PASSWORD"])
-
+            input_password.send_keys(os.environ["UTOKYO_PASSWORD"])
             button_login = driver.find_element(By.CLASS_NAME, "submit")
             button_login.click()
             sleep(5)
 
-            if driver.current_url == "https://login.microsoftonline.com/login.srf":
-                print("LMS: init() /login.srf")
-                button_yes = driver.find_element(By.ID, "idSIButton9")
-                action = webdriver.common.action_chains.ActionChains(driver)
-                action.move_to_element_with_offset(button_yes, 5, 5)
-                action.click()
-                action.perform()
-                # button_yes.click()
-                sleep(5)
+            # if driver.current_url == "https://login.microsoftonline.com/login.srf":
+            #     print("UTOL: init() /login.srf")
+            #     button_yes = driver.find_element(By.ID, "idSIButton9")
+            #     action = webdriver.common.action_chains.ActionChains(driver)
+            #     action.move_to_element_with_offset(button_yes, 5, 5)
+            #     action.click()
+            #     action.perform()
+            #     # button_yes.click()
+            #     sleep(5)
 
-            while driver.current_url == "https://login.microsoftonline.com/appverify":
-                print("LMS: init() /appverify")
+            while driver.current_url == "https://login.microsoftonline.com/login.srf":
+                print("UTOL: init() /appverify")
                 onetime_code = driver.find_element(By.ID, "idRichContext_DisplaySign")
-                print("LMS: init() onetime code issued ", onetime_code.text)
+                print("UTOL: init() one-time code issued ", onetime_code.text)
                 sleep(5)
 
             check_button = driver.find_element(By.ID, "KmsiCheckboxField")
@@ -67,16 +73,16 @@ def init():
             button_yes = driver.find_element(By.ID, "idSIButton9")
             button_yes.click()
 
-        print("LMS: init() done")
+        print("UTOL: init() done")
         return driver
 
     except Exception as e:
-        print("LMS: init() error... " + str(e))
+        print("UTOL: init() error... " + str(e))
         return None
 
 
 def getTaskList(driver):
-    driver.get("https://itc-lms.ecc.u-tokyo.ac.jp/lms/task")
+    driver.get("https://utol.ecc.u-tokyo.ac.jp/lms/task")
     sleep(5)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     tasks = soup.find_all("div", class_="result_list_line")
@@ -89,7 +95,7 @@ def getTaskList(driver):
                 "contents": task.contents[3].contents[1].text,
                 "title": task.contents[5].contents[1].text,
                 "deadline": task.contents[9].contents[3].text,
-                "link": "https://itc-lms.ecc.u-tokyo.ac.jp"
+                "link": "https://utol.ecc.u-tokyo.ac.jp"
                 + task.contents[5].contents[1].attrs["href"],
             }
         )
@@ -109,9 +115,9 @@ def sendMessageToSlack(channel, message, attachments=json.dumps([])):
         client = WebClient(token=os.environ["SLACK_TOKEN"])
         client.chat_postMessage(channel=channel, text=message, attachments=attachments)
     except Exception as e:
-        print("LMS: sendMessageToSlack() error... " + str(e))
+        print("UTOL: sendMessageToSlack() error... " + str(e))
     else:
-        print("LMS: sendMessageToSlack() successfully sent message to " + channel)
+        print("UTOL: sendMessageToSlack() successfully sent message to " + channel)
 
 
 def sendTasks(tasks):
@@ -123,30 +129,36 @@ def sendTasks(tasks):
                 "color": "good",
                 "title": task["title"],
                 "title_link": task["link"],
-                "text": "・コース名: " + task["courseName"] + "\n・期限: " + task["deadline"],
+                "text": "・コース名: "
+                + task["courseName"]
+                + "\n・期限: "
+                + task["deadline"],
             }
         )
-    sendMessageToSlack("#itclms-tasks", message, json.dumps(data))
+    sendMessageToSlack("#utol-tasks", message, json.dumps(data))
 
 
 def getUpdates(driver):
     driver.get(
-        "https://itc-lms.ecc.u-tokyo.ac.jp/updateinfo?openStatus=0&selectedUpdInfoButton=2"
+        "https://utol.ecc.u-tokyo.ac.jp/updateinfo?openStatus=0&selectedUpdInfoButton=2"
     )
     sleep(5)
     soup = BeautifulSoup(driver.page_source, "html.parser")
-    updates = soup.find_all("div", class_="updateTableContents updateResultList")
+    updates = soup.find_all(
+        "div",
+        class_="update-info-student contents-display-flex-exchange-sp update-info-cell",
+    )
 
     updateList = []
     for update in updates:
-        data = update.contents[3].contents[1].contents
+        data = update.contents
         updateList.append(
             {
                 "date": data[3].text.replace("\n", ""),
                 "course": data[5].text.replace("\n", ""),
                 "content": data[7].text.replace("\n", ""),
                 "info": data[9].text.replace("\n", "")[1:-18],
-                "link": "https://itc-lms.ecc.u-tokyo.ac.jp"
+                "link": "https://utol.ecc.u-tokyo.ac.jp"
                 + data[9].contents[1].attrs["value"],
             }
         )
@@ -156,10 +168,10 @@ def getUpdates(driver):
 def sendUpdates(updates):
     data = []
     try:
-        with open("data/LMS/updates.pkl", "rb") as f:
+        with open("data/UTOL/updates.pkl", "rb") as f:
             data = pickle.load(f)
     except:
-        print("LMS: sendUpdates() updates.pkl open error")
+        print("UTOL: sendUpdates() updates.pkl open error")
 
     sendLists = []
     for update in updates:
@@ -185,33 +197,33 @@ def sendUpdates(updates):
                 }
             )
     if len(sendLists) > 0:
-        sendMessageToSlack("#itclms-updates", "", json.dumps(sendLists))
+        sendMessageToSlack("#utol-updates", "", json.dumps(sendLists))
 
     data = updates
-    os.makedirs("data/LMS", exist_ok=True)
-    with open("data/LMS/updates.pkl", "wb") as f:
+    os.makedirs("data/UTOL", exist_ok=True)
+    with open("data/UTOL/updates.pkl", "wb") as f:
         pickle.dump(data, f)
 
 
 @sched.scheduled_job("cron", minute="15", hour="8, 19", executor="threadpool")
 def scheduled_job():
-    print("LMS: ----- sendTasks started -----")
+    print("UTOL: ----- sendTasks started -----")
     driver = init()
     if driver != None:
         sendTasks(getTaskList(driver))
         driver.quit()
-    print("LMS: ----- sendTasks done -----")
+    print("UTOL: ----- sendTasks done -----")
 
 
 @sched.scheduled_job("cron", minute="0,10,20,30,40,50", executor="threadpool")
 def scheduled_job():
-    print("LMS: ----- sendUpdates started -----")
+    print("UTOL: ----- sendUpdates started -----")
     driver = init()
     if driver != None:
         sendUpdates(getUpdates(driver))
         driver.quit()
-    print("LMS: ----- sendUpdates done -----")
+    print("UTOL: ----- sendUpdates done -----")
 
 
 sched.start()
-print("LMS: Bot initialized")
+print("UTOL: Bot initialized")
