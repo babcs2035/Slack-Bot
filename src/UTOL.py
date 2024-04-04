@@ -68,6 +68,7 @@ def init():
                 print("UTOL: init() one-time code issued ", onetime_code.text)
                 sleep(5)
 
+            sleep(5)
             check_button = driver.find_element(By.ID, "KmsiCheckboxField")
             check_button.click()
             button_yes = driver.find_element(By.ID, "idSIButton9")
@@ -205,25 +206,27 @@ def sendUpdates(updates):
         pickle.dump(data, f)
 
 
-@sched.scheduled_job("cron", minute="15", hour="8, 19", executor="threadpool")
-def scheduled_job():
-    print("UTOL: ----- sendTasks started -----")
-    driver = init()
-    if driver != None:
-        sendTasks(getTaskList(driver))
-        driver.quit()
-    print("UTOL: ----- sendTasks done -----")
+# @sched.scheduled_job("cron", minute="15", hour="8, 19", executor="threadpool")
+# def scheduled_job():
+#     print("UTOL: ----- sendTasks started -----")
+#     driver = init()
+#     if driver != None:
+#         sendTasks(getTaskList(driver))
+#         driver.quit()
+#     print("UTOL: ----- sendTasks done -----")
 
 
-@sched.scheduled_job("cron", minute="0,10,20,30,40,50", executor="threadpool")
-def scheduled_job():
-    print("UTOL: ----- sendUpdates started -----")
-    driver = init()
-    if driver != None:
-        sendUpdates(getUpdates(driver))
-        driver.quit()
-    print("UTOL: ----- sendUpdates done -----")
+# @sched.scheduled_job("cron", minute="0,10,20,30,40,50", executor="threadpool")
+# def scheduled_job():
+#     print("UTOL: ----- sendUpdates started -----")
+#     driver = init()
+#     if driver != None:
+#         sendUpdates(getUpdates(driver))
+#         driver.quit()
+#     print("UTOL: ----- sendUpdates done -----")
 
 
-sched.start()
-print("UTOL: Bot initialized")
+# sched.start()
+# print("UTOL: Bot initialized")
+
+init()
