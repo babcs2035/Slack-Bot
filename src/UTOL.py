@@ -91,10 +91,10 @@ def getTaskList(driver):
     for task in tasks:
         taskList.append(
             {
-                "courseName": task.contents[1].text,
+                "courseName": task.contents[1].text.replace("\n", ""),
                 "contents": task.contents[3].contents[1].text,
-                "title": task.contents[5].contents[1].text,
-                "deadline": task.contents[9].contents[3].text,
+                "title": task.contents[5].contents[1].text.replace("\n", ""),
+                "deadline": task.contents[7].contents[5].text,
                 "link": "https://utol.ecc.u-tokyo.ac.jp"
                 + task.contents[5].contents[1].attrs["href"],
             }
