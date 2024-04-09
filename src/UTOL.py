@@ -85,6 +85,15 @@ def init():
 def getTaskList(driver):
     driver.get("https://utol.ecc.u-tokyo.ac.jp/lms/task")
     sleep(5)
+    check_button = driver.find_element(By.ID, "status_2")
+    check_button.click()
+    sleep(5)
+    check_button = driver.find_element(By.ID, "status_3")
+    check_button.click()
+    sleep(5)
+    check_button = driver.find_element(By.ID, "status_4")
+    check_button.click()
+    sleep(5)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     tasks = soup.find_all("div", class_="result_list_line")
 
