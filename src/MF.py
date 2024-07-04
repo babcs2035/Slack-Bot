@@ -1,7 +1,6 @@
 import os
 from time import sleep
 from selenium import webdriver
-import chromedriver_binary
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from slack_sdk import WebClient
@@ -15,6 +14,9 @@ sched = BlockingScheduler(
         "processpool": ProcessPoolExecutor(max_workers=1),
     }
 )
+
+if os.environ["DEBUG"] != "1":
+    import chromedriver_binary
 
 print("MF: Bot started")
 
