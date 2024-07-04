@@ -46,6 +46,7 @@ def init():
         sleep(5)
 
         print("MF: init() input MF_EMAIL")
+        print("MF: init() url: " + driver.current_url)
         input_id = driver.find_element(By.NAME, "mfid_user[email]")
         input_id.send_keys(os.environ["MF_EMAIL"])
         button_next = driver.find_element(By.ID, "submitto")
