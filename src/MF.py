@@ -31,6 +31,7 @@ def init():
     if os.environ["DEBUG"] != "1":
         options.add_argument("--user-data-dir=" + userdata_dir)
         options.add_argument("--headless")
+        options.add_argument("--window-size=1920,1280")
     options.add_argument("--no-sandbox")
     driver = webdriver.Chrome(options=options)
 
