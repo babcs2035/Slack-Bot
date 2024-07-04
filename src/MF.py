@@ -15,7 +15,7 @@ sched = BlockingScheduler(
     }
 )
 
-if os.environ["DEBUG"] != "1":
+if os.environ["DEBUG"] == "1":
     import chromedriver_binary
 
 print("MF: Bot started")
