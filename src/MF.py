@@ -1,5 +1,6 @@
 import os
 from time import sleep
+import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -15,8 +16,6 @@ sched = BlockingScheduler(
     }
 )
 
-if os.environ["DEBUG"] == "1":
-    import chromedriver_binary
 
 print("MF: Bot started")
 

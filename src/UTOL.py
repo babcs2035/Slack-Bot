@@ -236,7 +236,7 @@ def scheduled_job():
 
 
 if __name__ == "__main__":
-    sendTasks(getTaskList(init()))
+    sendUpdates(getUpdates(init()))
 
 
 sched.start()
