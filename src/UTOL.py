@@ -2,6 +2,7 @@ import os
 import json
 import pickle
 from time import sleep
+import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
