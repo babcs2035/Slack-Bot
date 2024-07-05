@@ -235,6 +235,10 @@ def scheduled_job():
     print("UTOL: ----- sendUpdates done -----")
 
 
+if __name__ == "__main__":
+    sendTasks(getTaskList(init()))
+
+
 sched.start()
 print("UTOL: Bot initialized")
 
