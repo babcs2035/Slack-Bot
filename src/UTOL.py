@@ -29,15 +29,28 @@ def init():
     os.makedirs(userdata_dir, exist_ok=True)
 
     options = Options()
-    options.add_argument("--user-data-dir=" + userdata_dir)
-    options.add_argument("--headless")
-    options.add_argument("--window-size=1920,1280")
+    if os.environ["DEBUG"] != "1":
+        options.add_argument("--user-data-dir=" + userdata_dir)
+        options.add_argument("--headless")
+        options.add_argument("--window-size=1920,1280")
+        options.add_argument("--no-sandbox")
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36"
+        )
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_argument("--disable-extensions")
+        options.add_experimental_option("useAutomationExtension", False)
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
     driver = webdriver.Chrome(options=options)
+    driver.execute_script(
+        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    )
 
     try:
         driver.get("https://utol.ecc.u-tokyo.ac.jp/saml/login?disco=true")
+        sleep(5)
+        print(f"UTOL: driver.title: {driver.title}")
         if driver.title != "時間割":
-            sleep(5)
 
             print("UTOL: init() input UTOKYO_ID")
             input_id = driver.find_element(By.NAME, "loginfmt")
