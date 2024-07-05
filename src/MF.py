@@ -47,7 +47,7 @@ def init():
     try:
         driver.get("https://moneyforward.com/")
         sleep(5)
-        print(f"MF: driver.title: {driver.title}")
+        # print(f"MF: driver.title: {driver.title}")
         if driver.title == "マネーフォワード ME":
             print("MF: init() already logged in")
             return driver
@@ -82,7 +82,7 @@ def update_all(driver):
     print("MF: update_all() started")
 
     driver.get("https://moneyforward.com/")
-    sleep(5)
+    sleep(10)
     a_elements = driver.find_elements(By.TAG_NAME, "a")
     for a_elem in a_elements:
         try:

@@ -49,7 +49,7 @@ def init():
     try:
         driver.get("https://utol.ecc.u-tokyo.ac.jp/saml/login?disco=true")
         sleep(5)
-        print(f"UTOL: driver.title: {driver.title}")
+        # print(f"UTOL: driver.title: {driver.title}")
         if driver.title != "時間割":
 
             print("UTOL: init() input UTOKYO_ID")
