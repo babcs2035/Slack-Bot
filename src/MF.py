@@ -46,7 +46,7 @@ def init():
 
     try:
         driver.get("https://moneyforward.com/")
-        sleep(5)
+        sleep(10)
         # print(f"MF: driver.title: {driver.title}")
         if driver.title == "マネーフォワード ME":
             print("MF: init() already logged in")
