@@ -42,7 +42,9 @@ def init():
             print("MF: init() already logged in")
             return driver
 
-        driver.get("https://moneyforward.com/sign_in")
+        driver.get(
+            "https://id.moneyforward.com/sign_in?client_id=2WND7CAYV1NsJDBzk13JRtjuk5g9Jtz-4gkAoVzuS_k&nonce=69ab9510e15607054678dd15b5f9a76d&redirect_uri=https%3A%2F%2Fmoneyforward.com%3A443%2Fauth%2Fmfid%2Fcallback&response_type=code&scope=openid+email+profile+address&select_account=true&state=a39fcd56457e0ac47d6a70c93e61d9c4"
+        )
         sleep(5)
 
         print("MF: init() input MF_EMAIL")
