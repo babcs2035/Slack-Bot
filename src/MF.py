@@ -98,7 +98,7 @@ if __name__ == "__main__":
     update_all(init())
 
 
-@sched.scheduled_job("cron", minute="0", hour="7", executor="threadpool")
+@sched.scheduled_job("cron", minute="0", hour="7,19", executor="threadpool")
 def scheduled_job():
     print("MF: ----- update_all started -----")
     driver = init()
