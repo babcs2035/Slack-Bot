@@ -25,7 +25,7 @@ print("UTOL: Bot started")
 def init():
     print("UTOL: init() started")
 
-    userdata_dir = "selenium"
+    userdata_dir = "selenium/utol"
     os.makedirs(userdata_dir, exist_ok=True)
 
     options = Options()

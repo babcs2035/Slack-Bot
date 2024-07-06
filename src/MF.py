@@ -23,7 +23,7 @@ print("MF: Bot started")
 def init():
     print("MF: init() started")
 
-    userdata_dir = "selenium"
+    userdata_dir = "selenium/mf"
     os.makedirs(userdata_dir, exist_ok=True)
 
     options = Options()
