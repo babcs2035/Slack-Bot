@@ -43,17 +43,15 @@ def init():
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     )
+    driver.implicitly_wait(60)
 
     try:
         driver.get("https://moneyforward.com/")
-        sleep(10)
-        # print(f"MF: driver.title: {driver.title}")
         if driver.title == "マネーフォワード ME":
             print("MF: init() already logged in")
             return driver
 
         driver.get("https://moneyforward.com/sign_in")
-        sleep(10)
 
         print("MF: init() url: " + driver.current_url)
         print("MF: init() input MF_EMAIL")
@@ -61,14 +59,12 @@ def init():
         input_id.send_keys(os.environ["MF_EMAIL"])
         button_next = driver.find_element(By.ID, "submitto")
         button_next.click()
-        sleep(10)
 
         print("MF: init() input MF_PASSWORD")
         input_id = driver.find_element(By.NAME, "mfid_user[password]")
         input_id.send_keys(os.environ["MF_PASSWORD"])
         button_next = driver.find_element(By.ID, "submitto")
         button_next.click()
-        sleep(10)
 
         print("MF: init() logged in")
         return driver
@@ -82,7 +78,6 @@ def update_all(driver):
     print("MF: update_all() started")
 
     driver.get("https://moneyforward.com/")
-    sleep(10)
     a_elements = driver.find_elements(By.TAG_NAME, "a")
     for a_elem in a_elements:
         try:
