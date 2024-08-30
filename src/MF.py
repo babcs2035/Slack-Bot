@@ -53,22 +53,22 @@ def init():
             return driver
 
         driver.get("https://moneyforward.com/sign_in")
-        sleep(5)
+        sleep(10)
 
-        print("MF: init() input MF_EMAIL")
         print("MF: init() url: " + driver.current_url)
+        print("MF: init() input MF_EMAIL")
         input_id = driver.find_element(By.NAME, "mfid_user[email]")
         input_id.send_keys(os.environ["MF_EMAIL"])
         button_next = driver.find_element(By.ID, "submitto")
         button_next.click()
-        sleep(5)
+        sleep(10)
 
         print("MF: init() input MF_PASSWORD")
         input_id = driver.find_element(By.NAME, "mfid_user[password]")
         input_id.send_keys(os.environ["MF_PASSWORD"])
         button_next = driver.find_element(By.ID, "submitto")
         button_next.click()
-        sleep(5)
+        sleep(10)
 
         print("MF: init() logged in")
         return driver
