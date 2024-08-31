@@ -270,10 +270,11 @@ def scheduled_job():
 
 
 if __name__ == "__main__":
-    sendTasks(getTaskList(init()))
+    try:
+        sendTasks(getTaskList(init()))
+    except Exception as e:
+        print("UTOL: __main__ error: " + str(e))
 
 
 sched.start()
 print("UTOL: Bot initialized")
-
-init()

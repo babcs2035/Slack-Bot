@@ -145,7 +145,10 @@ def update_all(driver):
 
 
 if __name__ == "__main__":
-    update_all(init())
+    try:
+        update_all(init())
+    except Exception as e:
+        print("MF: __main__ error: " + str(e))
 
 
 @sched.scheduled_job("cron", minute="20", hour="7", executor="threadpool")
