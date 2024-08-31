@@ -5,7 +5,9 @@ from time import sleep
 import chromedriver_binary
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
 from bs4 import BeautifulSoup
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -32,39 +34,50 @@ def init():
     if os.environ["DEBUG"] != "1":
         options.add_argument("--user-data-dir=" + userdata_dir)
         options.add_argument("--headless")
-        options.add_argument("--window-size=1920,1280")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=640,480")
         options.add_argument("--no-sandbox")
         options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36"
         )
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument("--disable-extensions")
+        options.add_argument("--disable-desktop-notifications")
+        options.add_argument("--blink-settings=imagesEnabled=false")
         options.add_experimental_option("useAutomationExtension", False)
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
     driver = webdriver.Chrome(options=options)
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     )
+    wait = WebDriverWait(driver, 30)
+    driver.implicitly_wait(30)
 
     try:
         driver.get("https://utol.ecc.u-tokyo.ac.jp/saml/login?disco=true")
-        sleep(5)
-        # print(f"UTOL: driver.title: {driver.title}")
+        wait.until(EC.visibility_of_element_located((By.ID, "pageContents")))
         if driver.title != "時間割":
 
-            print("UTOL: init() input UTOKYO_ID")
-            input_id = driver.find_element(By.NAME, "loginfmt")
+            input_id = wait.until(
+                EC.visibility_of_element_located((By.NAME, "loginfmt"))
+            )
             input_id.send_keys(os.environ["UTOKYO_ID"])
-            button_next = driver.find_element(By.ID, "idSIButton9")
+            print("UTOL: init() input UTOKYO_ID")
+            button_next = wait.until(
+                EC.visibility_of_element_located((By.ID, "idSIButton9"))
+            )
             button_next.click()
-            sleep(5)
 
-            print("UTOL: init() input UTOKYO_ID & PASSWORD")
-            input_password = driver.find_element(By.NAME, "Password")
+            input_password = wait.until(
+                EC.visibility_of_element_located((By.NAME, "Password"))
+            )
             input_password.send_keys(os.environ["UTOKYO_PASSWORD"])
-            button_login = driver.find_element(By.CLASS_NAME, "submit")
+            print("UTOL: init() input PASSWORD")
+            button_login = wait.until(
+                EC.visibility_of_element_located((By.CLASS_NAME, "submit"))
+            )
             button_login.click()
-            sleep(5)
+            sleep(15)
 
             # if driver.current_url == "https://login.microsoftonline.com/login.srf":
             #     print("UTOL: init() /login.srf")
@@ -78,14 +91,21 @@ def init():
 
             while driver.current_url == "https://login.microsoftonline.com/login.srf":
                 print("UTOL: init() /appverify")
-                onetime_code = driver.find_element(By.ID, "idRichContext_DisplaySign")
+                onetime_code = wait.until(
+                    EC.visibility_of_element_located(
+                        (By.ID, "idRichContext_DisplaySign")
+                    )
+                )
                 print("UTOL: init() one-time code issued ", onetime_code.text)
                 sleep(5)
 
-            sleep(5)
-            check_button = driver.find_element(By.ID, "KmsiCheckboxField")
+            check_button = wait.until(
+                EC.visibility_of_element_located((By.ID, "KmsiCheckboxField"))
+            )
             check_button.click()
-            button_yes = driver.find_element(By.ID, "idSIButton9")
+            button_yes = wait.until(
+                EC.visibility_of_element_located((By.ID, "idSIButton9"))
+            )
             button_yes.click()
 
         print("UTOL: init() done")
@@ -98,16 +118,16 @@ def init():
 
 def getTaskList(driver):
     driver.get("https://utol.ecc.u-tokyo.ac.jp/lms/task")
-    sleep(5)
-    check_button = driver.find_element(By.ID, "status_2")
+    wait = WebDriverWait(driver, 30)
+
+    check_button = wait.until(EC.visibility_of_element_located((By.ID, "status_2")))
     check_button.click()
-    sleep(5)
-    check_button = driver.find_element(By.ID, "status_3")
+    check_button = wait.until(EC.visibility_of_element_located((By.ID, "status_3")))
     check_button.click()
-    sleep(5)
-    check_button = driver.find_element(By.ID, "status_4")
+    check_button = wait.until(EC.visibility_of_element_located((By.ID, "status_4")))
     check_button.click()
-    sleep(5)
+    sleep(15)
+
     soup = BeautifulSoup(driver.page_source, "html.parser")
     tasks = soup.find_all("div", class_="result_list_line")
 
@@ -166,7 +186,7 @@ def getUpdates(driver):
     driver.get(
         "https://utol.ecc.u-tokyo.ac.jp/updateinfo?openStatus=0&selectedUpdInfoButton=2"
     )
-    sleep(5)
+    sleep(15)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     updates = soup.find_all(
         "div",
