@@ -249,7 +249,9 @@ def sendUpdates(updates):
         pickle.dump(data, f)
 
 
-@sched.scheduled_job("cron", minute="20", hour="8", executor="threadpool")
+@sched.scheduled_job(
+    "cron", minute="20", hour="8", executor="threadpool", misfire_grace_time=60 * 60
+)
 def scheduled_job():
     print("UTOL: ----- sendTasks started -----")
     driver = init()
@@ -259,7 +261,9 @@ def scheduled_job():
     print("UTOL: ----- sendTasks done -----")
 
 
-@sched.scheduled_job("cron", minute="0,15,30,45", executor="threadpool")
+@sched.scheduled_job(
+    "cron", minute="0,15,30,45", executor="threadpool", misfire_grace_time=60 * 60
+)
 def scheduled_job():
     print("UTOL: ----- sendUpdates started -----")
     driver = init()

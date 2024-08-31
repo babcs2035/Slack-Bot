@@ -151,7 +151,9 @@ if __name__ == "__main__":
         print("MF: __main__ error: " + str(e))
 
 
-@sched.scheduled_job("cron", minute="20", hour="7", executor="threadpool")
+@sched.scheduled_job(
+    "cron", minute="20", hour="7", executor="threadpool", misfire_grace_time=60 * 60
+)
 def scheduled_job():
     print("MF: ----- update_all started -----")
     driver = init()
