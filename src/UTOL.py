@@ -3,6 +3,7 @@ import json
 import pickle
 from time import sleep
 import chromedriver_binary
+import chromedriver_autoinstaller
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -26,6 +27,8 @@ print("UTOL: Bot started")
 
 def init():
     print("UTOL: init() started")
+
+    chromedriver_autoinstaller.install()
 
     userdata_dir = "selenium/utol"
     os.makedirs(userdata_dir, exist_ok=True)
