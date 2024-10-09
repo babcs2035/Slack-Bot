@@ -253,7 +253,7 @@ def sendUpdates(updates):
 
 
 @sched.scheduled_job(
-    "cron", minute="20", hour="8", executor="threadpool", misfire_grace_time=60 * 60
+    "cron", minute="15", hour="19", executor="threadpool", misfire_grace_time=60 * 60
 )
 def scheduled_job():
     print("UTOL: ----- sendTasks started -----")
@@ -265,7 +265,7 @@ def scheduled_job():
 
 
 @sched.scheduled_job(
-    "cron", minute="0,15,30,45", executor="threadpool", misfire_grace_time=60 * 60
+    "cron", minute="0,10,20,30,40,50", executor="threadpool", misfire_grace_time=60 * 60
 )
 def scheduled_job():
     print("UTOL: ----- sendUpdates started -----")

@@ -155,7 +155,7 @@ if __name__ == "__main__":
 
 
 @sched.scheduled_job(
-    "cron", minute="20", hour="7", executor="threadpool", misfire_grace_time=60 * 60
+    "cron", minute="55", hour="7", executor="threadpool", misfire_grace_time=60 * 60
 )
 def scheduled_job():
     print("MF: ----- update_all started -----")
