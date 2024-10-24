@@ -56,11 +56,11 @@ def init():
 
     try:
         driver.get("https://moneyforward.com/")
-        wait.until(
-            EC.visibility_of_element_located(
-                (By.ID, "js-cf-manual-payment-entry-submit-button")
-            )
-        )
+        # wait.until(
+        #     EC.visibility_of_element_located(
+        #         (By.ID, "js-cf-manual-payment-entry-submit-button")
+        #     )
+        # )
         if driver.title == "マネーフォワード ME":
             print("MF: init() already logged in")
             return driver
@@ -73,15 +73,15 @@ def init():
         print("MF: init() url: " + driver.current_url)
         input_id.send_keys(os.environ["MF_EMAIL"])
         print("MF: init() input MF_EMAIL")
-        button_next = wait.until(EC.visibility_of_element_located((By.ID, "submitto")))
-        button_next.click()
-        print("MF: init() click submit button")
-        wait.until(EC.visibility_of_element_located((By.ID, "submitto")))
-        if str(driver.current_url).find("password") == -1:
-            print("MF: init() failed to find password page")
-            return None
+        # button_next = wait.until(EC.visibility_of_element_located((By.ID, "submitto")))
+        # button_next.click()
+        # print("MF: init() click submit button")
+        # wait.until(EC.visibility_of_element_located((By.ID, "submitto")))
+        # if str(driver.current_url).find("password") == -1:
+        #     print("MF: init() failed to find password page")
+        #     return None
 
-        print("MF: init() url: " + driver.current_url)
+        # print("MF: init() url: " + driver.current_url)
         input_id = wait.until(
             EC.visibility_of_element_located((By.NAME, "mfid_user[password]"))
         )
@@ -136,13 +136,14 @@ def update_all(driver):
             (By.ID, "js-cf-manual-payment-entry-submit-button")
         )
     )
-    a_elements = driver.find_elements(By.TAG_NAME, "a")
-    for a_elem in a_elements:
-        try:
-            if a_elem.text == "更新":
-                a_elem.click()
-        except Exception as e:
-            print("MF: update_all() error: " + str(e))
+    a_elements = driver.find_elements(By.CLASS_NAME, "icon-refresh")
+    a_elements[0].click()
+    # for a_elem in a_elements:
+    #     try:
+    #         if a_elem.text == "更新":
+    #             a_elem.click()
+    #     except Exception as e:
+    #         print("MF: update_all() error: " + str(e))
 
     print("MF: update_all() done")
 
@@ -155,7 +156,7 @@ if __name__ == "__main__":
 
 
 @sched.scheduled_job(
-    "cron", minute="55", hour="7", executor="threadpool", misfire_grace_time=60 * 60
+    "cron", minute="0", hour="8", executor="threadpool", misfire_grace_time=60 * 60
 )
 def scheduled_job():
     print("MF: ----- update_all started -----")
