@@ -56,11 +56,11 @@ def init():
 
     try:
         driver.get("https://moneyforward.com/")
-        # wait.until(
-        #     EC.visibility_of_element_located(
-        #         (By.ID, "js-cf-manual-payment-entry-submit-button")
-        #     )
-        # )
+        wait.until(
+            EC.visibility_of_element_located(
+                (By.ID, "js-cf-manual-payment-entry-submit-button")
+            )
+        )
         if driver.title == "マネーフォワード ME":
             print("MF: init() already logged in")
             return driver
