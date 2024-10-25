@@ -53,8 +53,8 @@ def init():
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     )
-    wait = WebDriverWait(driver, 30)
-    driver.implicitly_wait(30)
+    wait = WebDriverWait(driver, 300)
+    driver.implicitly_wait(300)
 
     try:
         driver.get("https://utol.ecc.u-tokyo.ac.jp/saml/login?disco=true")
@@ -253,7 +253,7 @@ def sendUpdates(updates):
 
 
 @sched.scheduled_job(
-    "cron", minute="15", hour="19", executor="threadpool", misfire_grace_time=60 * 60
+    "cron", minute="45", hour="18", executor="threadpool", misfire_grace_time=60 * 60
 )
 def scheduled_job():
     print("UTOL: ----- sendTasks started -----")

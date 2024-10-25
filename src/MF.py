@@ -51,8 +51,8 @@ def init():
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     )
-    wait = WebDriverWait(driver, 30)
-    driver.implicitly_wait(30)
+    wait = WebDriverWait(driver, 300)
+    driver.implicitly_wait(300)
 
     try:
         driver.get("https://moneyforward.com/")
@@ -156,7 +156,7 @@ if __name__ == "__main__":
 
 
 @sched.scheduled_job(
-    "cron", minute="0", hour="8", executor="threadpool", misfire_grace_time=60 * 60
+    "cron", minute="15", hour="7", executor="threadpool", misfire_grace_time=60 * 60
 )
 def scheduled_job():
     print("MF: ----- update_all started -----")
