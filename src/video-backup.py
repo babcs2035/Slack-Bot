@@ -10,6 +10,8 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
+print("video-backup: Bot started")
+
 # 環境変数から設定を取得
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 SLACK_SIGNING_SECRET = os.environ["SLACK_SIGNING_SECRET"]
@@ -19,6 +21,7 @@ YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 YOUTUBE_CLIENT_SECRET_FILE = os.environ["YOUTUBE_CLIENT_SECRET_FILE"]
 SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
+BOT_USER = os.environ["BOT_USER"]
 
 # Slack アプリの初期化
 app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
@@ -50,21 +53,18 @@ def terminate(message):
 def handle_message_events(body, say):
     print("---------------- video-backup started ----------------")
 
+    event = body.get("event", {})
+    channel_id = event.get("channel")
+    thread_ts = event.get("ts")
+
     try:
-        event = body.get("event", {})
         if event.get("subtype") in ["message_deleted", "message_changed"]:
             terminate("Invalid event.subtype")
             return
 
-        if not (
-            event.get("type") == "message"
-            and event.get("user") != os.environ["BOT_USER"]
-        ):
+        if not (event.get("type") == "message" and event.get("user") != BOT_USER):
             terminate("Invalid event")
             return
-
-        channel_id = event.get("channel")
-        thread_ts = event.get("ts")
 
         if channel_id != SLACK_CHANNEL_ID:
             terminate("Invalid channelId")
@@ -103,7 +103,9 @@ def handle_message_events(body, say):
             ]
         else:
             post_message_to_slack(
-                channel_id, thread_ts, f"*Failed to upload video*\n{upload_response}"
+                channel_id,
+                thread_ts,
+                f"*Failed to upload video*\n```{upload_response}```",
             )
             write_data = [
                 str(datetime.now()),
@@ -117,8 +119,8 @@ def handle_message_events(body, say):
         sheet.append_row(write_data)
         terminate("terminated")
     except Exception as e:
-        post_message_to_slack(channel_id, thread_ts, f"*Error*\n{e}")
-        terminate(f"video-backup: Error: {e}")
+        post_message_to_slack(channel_id, thread_ts, f"*Error*\n```{e!r}```")
+        terminate(f"Error: {e!r}")
 
 
 def find_latest_video(message):
@@ -163,7 +165,7 @@ def upload_video_to_youtube(filename, title, description):
 def check_if_video_exists(title):
     records = sheet.get_all_records()
     for record in records:
-        if record["Title"] == title and record["Status"] == "succeeded":
+        if record["File Name"] == title and record["Status"] == "succeeded":
             print(f'video-backup: Found existing video with title: "{title}"')
             return True
     return False
@@ -180,4 +182,4 @@ def post_message_to_slack(channel_id, thread_ts, message):
 
 
 if __name__ == "__main__":
-    app.start(port=int(os.environ.get("PORT", 5000)))
+    app.start(port=int(os.environ.get("PORT", 8000)))
