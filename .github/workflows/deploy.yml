@@ -20,5 +20,5 @@ jobs:
                       echo Started to deploy...
                       cd ~/bots/Slack-Bot/
                       git pull
-                      ~/.volta/bin/pm2 restart Slack-Bot
+                      ~/.volta/bin/pm2 restart Slack-Bot --update-env
                       echo Done!
