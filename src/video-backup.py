@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import os
 from slack_bolt import App
 from slack_sdk import WebClient
@@ -12,7 +11,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
 # 環境変数から設定を取得
-load_dotenv()
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
 SLACK_SIGNING_SECRET = os.environ["SLACK_SIGNING_SECRET"]
 SLACK_CHANNEL_ID = os.environ["SLACK_CHANNEL_ID"]
@@ -35,7 +33,6 @@ creds = ServiceAccountCredentials.from_json_keyfile_name(
 )
 client = gspread.authorize(creds)
 sheet = client.open_by_key(SPREADSHEET_ID).sheet1
-
 
 # YouTube API の認証
 credentials = service_account.Credentials.from_service_account_file(
