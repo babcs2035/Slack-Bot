@@ -5,3 +5,6 @@ data/
 selenium/
 client_secret.json
 service_account.json
+thread_status.pkl
+*.mp4
+*.mov

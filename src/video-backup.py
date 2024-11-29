@@ -1,4 +1,5 @@
 import os
+import pickle
 from slack_bolt import App
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -43,6 +44,23 @@ credentials = service_account.Credentials.from_service_account_file(
 )
 youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials)
 
+# ファイル名を定義
+status_file = "thread_status.pkl"
+
+
+# ステータスを読み込む関数
+def load_status():
+    if os.path.exists(status_file):
+        with open(status_file, "rb") as file:
+            return pickle.load(file)
+    return []
+
+
+# ステータスを保存する関数
+def save_status(status):
+    with open(status_file, "wb") as file:
+        pickle.dump(status, file)
+
 
 def terminate(message):
     print(f"video-backup: {message}")
@@ -56,6 +74,18 @@ def handle_message_events(body, say):
     event = body.get("event", {})
     channel_id = event.get("channel")
     thread_ts = event.get("ts")
+
+    # ステータスを読み込む
+    status = load_status()
+
+    # 既に処理済み・処理中かどうかを確認
+    if thread_ts in status:
+        terminate(f"Thread {thread_ts} is already received")
+        return
+
+    # 処理中に設定
+    status.append(thread_ts)
+    save_status(status)
 
     try:
         if event.get("subtype") in ["message_deleted", "message_changed"]:
