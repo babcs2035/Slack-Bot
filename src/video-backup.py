@@ -4,12 +4,16 @@ from slack_bolt import App
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+from flask import Flask, request, redirect
 
 print("video-backup: Bot started")
 
@@ -21,28 +25,72 @@ GOOGLE_SERVICE_ACCOUNT_FILE = os.environ["GOOGLE_SERVICE_ACCOUNT_FILE"]
 YOUTUBE_API_SERVICE_NAME = "youtube"
 YOUTUBE_API_VERSION = "v3"
 YOUTUBE_CLIENT_SECRET_FILE = os.environ["YOUTUBE_CLIENT_SECRET_FILE"]
+YOUTUBE_TOKEN_PATH = os.environ["YOUTUBE_TOKEN_PATH"]
 SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
 BOT_USER = os.environ["BOT_USER"]
 
 # Slack アプリの初期化
 app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
+app2 = Flask(__name__)
+
 
 # Google Sheets API の認証
-creds = ServiceAccountCredentials.from_json_keyfile_name(
-    GOOGLE_SERVICE_ACCOUNT_FILE,
-    [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive",
-    ],
-)
-client = gspread.authorize(creds)
-sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+def get_google_sheet():
+    creds = ServiceAccountCredentials.from_json_keyfile_name(
+        GOOGLE_SERVICE_ACCOUNT_FILE,
+        [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive",
+        ],
+    )
+    client = gspread.authorize(creds)
+    sheet = client.open_by_key(SPREADSHEET_ID).sheet1
+    return sheet
+
 
 # YouTube API の認証
-credentials = service_account.Credentials.from_service_account_file(
-    YOUTUBE_CLIENT_SECRET_FILE
-)
-youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials)
+def get_youtube_service():
+    credentials = None
+
+    # Check if the token file exists
+    if os.path.exists(YOUTUBE_TOKEN_PATH):
+        credentials = Credentials.from_authorized_user_file(
+            YOUTUBE_TOKEN_PATH, ["https://www.googleapis.com/auth/youtube.upload"]
+        )
+
+    # If there are no valid credentials available, request authorization
+    if not credentials or not credentials.valid:
+        flow = InstalledAppFlow.from_client_secrets_file(
+            YOUTUBE_CLIENT_SECRET_FILE,
+            ["https://www.googleapis.com/auth/youtube.upload"],
+        )
+        auth_url, _ = flow.authorization_url()
+        auth_url += f"&redirect_uri=https://ktak.dev/slack-bot-auth/usercallback"
+        raise Exception(
+            f"Credentials are not valid or expired. Please authorize at: {auth_url} "
+        )
+
+    # Build the YouTube service
+    youtube = build(
+        YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials
+    )
+    return youtube
+
+
+@app2.route("/usercallback")
+def usercallback():
+    flow = InstalledAppFlow.from_client_secrets_file(
+        YOUTUBE_CLIENT_SECRET_FILE, ["https://www.googleapis.com/auth/youtube.upload"]
+    )
+    flow.fetch_token(authorization_response=request.url)
+
+    # Save the credentials for the next run
+    credentials = flow.credentials
+    with open(YOUTUBE_TOKEN_PATH, "w") as token:
+        token.write(credentials.to_json())
+
+    return "Authorization successful"
+
 
 # ファイル名を定義
 status_file = "thread_status.pkl"
@@ -78,7 +126,7 @@ def handle_message_events(body, say):
     # ステータスを読み込む
     status = load_status()
 
-    # 既に処理済み・処理中かどうかを確認
+    # 既に処理済みかどうかを確認
     if thread_ts in status:
         terminate(f"Thread {thread_ts} is already received")
         return
@@ -146,6 +194,7 @@ def handle_message_events(body, say):
                 "failed",
             ]
 
+        sheet = get_google_sheet()
         sheet.append_row(write_data)
         terminate("terminated")
     except Exception as e:
@@ -185,6 +234,7 @@ def upload_video_to_youtube(filename, title, description):
         },
     }
     media = MediaFileUpload(filename, mimetype="video/*", resumable=True)
+    youtube = get_youtube_service()
     request = youtube.videos().insert(
         part="snippet,status", body=body, media_body=media
     )
@@ -193,6 +243,7 @@ def upload_video_to_youtube(filename, title, description):
 
 
 def check_if_video_exists(title):
+    sheet = get_google_sheet()
     records = sheet.get_all_records()
     for record in records:
         if record["File Name"] == title and record["Status"] == "succeeded":
@@ -213,3 +264,4 @@ def post_message_to_slack(channel_id, thread_ts, message):
 
 if __name__ == "__main__":
     app.start(port=int(os.environ.get("PORT", 8000)))
+    app2.run("localhost", 8001, debug=True)
