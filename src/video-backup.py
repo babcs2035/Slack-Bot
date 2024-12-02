@@ -3,9 +3,7 @@ import pickle
 from slack_bolt import App
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -13,9 +11,8 @@ import requests
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-from flask import Flask, request, redirect
 
-print("video-backup: Bot started")
+print("video-backup: started")
 
 # 環境変数から設定を取得
 SLACK_BOT_TOKEN = os.environ["SLACK_BOT_TOKEN"]
@@ -30,8 +27,7 @@ SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
 BOT_USER = os.environ["BOT_USER"]
 
 # Slack アプリの初期化
-app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
-app2 = Flask(__name__)
+bolt_app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
 
 
 # Google Sheets API の認証
@@ -77,21 +73,6 @@ def get_youtube_service():
     return youtube
 
 
-@app2.route("/usercallback")
-def usercallback():
-    flow = InstalledAppFlow.from_client_secrets_file(
-        YOUTUBE_CLIENT_SECRET_FILE, ["https://www.googleapis.com/auth/youtube.upload"]
-    )
-    flow.fetch_token(authorization_response=request.url)
-
-    # Save the credentials for the next run
-    credentials = flow.credentials
-    with open(YOUTUBE_TOKEN_PATH, "w") as token:
-        token.write(credentials.to_json())
-
-    return "Authorization successful"
-
-
 # ファイル名を定義
 status_file = "thread_status.pkl"
 
@@ -115,7 +96,7 @@ def terminate(message):
     print("---------------- video-backup ended ----------------")
 
 
-@app.event("message")
+@bolt_app.event("message")
 def handle_message_events(body, say):
     print("---------------- video-backup started ----------------")
 
@@ -263,5 +244,4 @@ def post_message_to_slack(channel_id, thread_ts, message):
 
 
 if __name__ == "__main__":
-    app.start(port=int(os.environ.get("PORT", 8000)))
-    app2.run("localhost", 8001, debug=True)
+    bolt_app.start(port=int(os.environ.get("PORT", 8000)))
