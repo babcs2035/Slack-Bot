@@ -50,27 +50,36 @@ def get_youtube_service():
 
     # Check if the token file exists
     if os.path.exists(YOUTUBE_TOKEN_PATH):
-        credentials = Credentials.from_authorized_user_file(
-            YOUTUBE_TOKEN_PATH, ["https://www.googleapis.com/auth/youtube.upload"]
-        )
+        try:
+            credentials = Credentials.from_authorized_user_file(
+                YOUTUBE_TOKEN_PATH,
+                ["https://www.googleapis.com/auth/youtube.upload"],
+            )
+        except Exception as e:
+            print(f"video-backup: Error loading credentials: {e!r}")
+            youtube_auth()
 
     # If there are no valid credentials available, request authorization
     if not credentials or not credentials.valid:
-        flow = InstalledAppFlow.from_client_secrets_file(
-            YOUTUBE_CLIENT_SECRET_FILE,
-            ["https://www.googleapis.com/auth/youtube.upload"],
-        )
-        auth_url, _ = flow.authorization_url()
-        auth_url += f"&redirect_uri=https://ktak.dev/slack-bot-auth/usercallback"
-        raise Exception(
-            f"Credentials are not valid or expired. Please authorize at: {auth_url} "
-        )
+        youtube_auth()
 
     # Build the YouTube service
     youtube = build(
         YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials
     )
     return youtube
+
+
+def youtube_auth():
+    flow = InstalledAppFlow.from_client_secrets_file(
+        YOUTUBE_CLIENT_SECRET_FILE,
+        ["https://www.googleapis.com/auth/youtube.upload"],
+    )
+    auth_url, _ = flow.authorization_url()
+    auth_url += f"&redirect_uri=https://ktak.dev/slack-bot-auth/usercallback"
+    raise Exception(
+        f"Credentials are not valid or expired. Please authorize at: {auth_url} "
+    )
 
 
 # ファイル名を定義
