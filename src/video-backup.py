@@ -138,6 +138,10 @@ def handle_message_events(body, say):
             terminate("Invalid channelId")
             return
 
+        if event.get("text", "") == "auth":
+            youtube_auth()
+            return
+
         video = find_latest_video(event)
         if not video:
             post_message_to_slack(channel_id, thread_ts, "*Video not found*")
