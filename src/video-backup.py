@@ -75,7 +75,7 @@ def youtube_auth():
         YOUTUBE_CLIENT_SECRET_FILE,
         ["https://www.googleapis.com/auth/youtube.upload"],
     )
-    auth_url, _ = flow.authorization_url()
+    auth_url, _ = flow.authorization_url(access_type="offline", prompt="consent")
     auth_url += f"&redirect_uri=https://ktak.dev/slack-bot-auth/usercallback"
     raise Exception(
         f"Credentials are not valid or expired. Please authorize at: {auth_url} "
