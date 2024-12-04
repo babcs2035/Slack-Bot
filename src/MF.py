@@ -20,7 +20,7 @@ sched = BlockingScheduler(
 )
 
 
-print("MF: Bot started")
+print("MF: started")
 
 
 def init():
@@ -168,4 +168,4 @@ def scheduled_job():
 
 
 sched.start()
-print("MF: Bot initialized")
+print("MF: initialized")

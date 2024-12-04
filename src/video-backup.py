@@ -206,11 +206,14 @@ def find_latest_video(message):
 
 
 def download_slack_file(file_url):
+    print(f"video-backup: Started downloading file from {file_url}")
     headers = {"Authorization": f"Bearer {SLACK_BOT_TOKEN}"}
     response = requests.get(file_url, headers=headers)
     response.raise_for_status()
 
     ext = file_url.split(".")[-1]
+    if os.path.exists(f"video.{ext}"):
+        os.remove(f"video.{ext}")
     with open(f"video.{ext}", "wb") as f:
         f.write(response.content)
     print(f"video-backup: Downloaded file from {file_url}")

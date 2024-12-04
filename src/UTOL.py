@@ -22,7 +22,7 @@ sched = BlockingScheduler(
     }
 )
 
-print("UTOL: Bot started")
+print("UTOL: started")
 
 
 def init():
@@ -284,4 +284,4 @@ if __name__ == "__main__":
 
 
 sched.start()
-print("UTOL: Bot initialized")
+print("UTOL: initialized")
