@@ -26,6 +26,8 @@ YOUTUBE_TOKEN_PATH = os.environ["YOUTUBE_TOKEN_PATH"]
 SPREADSHEET_ID = os.environ["SPREADSHEET_ID"]
 BOT_USER = os.environ["BOT_USER"]
 
+extensions = [".mov", ".MOV", ".mp4", ".MP4"]
+
 # Slack アプリの初期化
 bolt_app = App(token=SLACK_BOT_TOKEN, signing_secret=SLACK_SIGNING_SECRET)
 
@@ -142,22 +144,31 @@ def handle_message_events(body, say):
             youtube_auth()
             return
 
-        video = find_latest_video(event)
-        if not video:
-            post_message_to_slack(channel_id, thread_ts, "*Video not found*")
-            terminate("Video not found")
-            return
+        video_filename = None
+        is_local = False
+        for ext in extensions:
+            if event.get("text", "").split("\n")[0].endswith(ext):
+                video_filename = event.get("text", "").split("\n")[0]
+                is_local = True
+                break
+        if not video_filename:
+            video = find_latest_video(event)
+            if not video:
+                post_message_to_slack(channel_id, thread_ts, "*Video not found*")
+                terminate("Video not found")
+                return
+            if check_if_video_exists(video["name"]):
+                post_message_to_slack(
+                    channel_id, thread_ts, "*This video has already been uploaded*"
+                )
+                terminate("This video has already been uploaded")
+                return
+            video_filename = download_slack_file(video["url"])
 
-        if check_if_video_exists(video["name"]):
-            post_message_to_slack(
-                channel_id, thread_ts, "*This video has already been uploaded*"
-            )
-            terminate("This video has already been uploaded")
-            return
-
-        video_filename = download_slack_file(video["url"])
         upload_response = upload_video_to_youtube(
-            video_filename, video["name"], event.get("text", "")
+            video_filename,
+            video_filename,
+            "\n".join(event.get("text", "").split("\n")[1:]),
         )
 
         if upload_response.get("id"):
@@ -165,28 +176,49 @@ def handle_message_events(body, say):
             post_message_to_slack(
                 channel_id, thread_ts, f"*Successfully uploaded video*\n{video_url}"
             )
-            write_data = [
-                str(datetime.now()),
-                video["name"],
-                video["url"],
-                event.get("text", ""),
-                video_url,
-                "succeeded",
-            ]
+            if is_local:
+                write_data = [
+                    str(datetime.now()),
+                    video_filename,
+                    video_filename,
+                    "\n".join(event.get("text", "").split("\n")[1:]),
+                    video_url,
+                    "succeeded",
+                ]
+            else:
+                write_data = [
+                    str(datetime.now()),
+                    video["name"],
+                    video["url"],
+                    event.get("text", ""),
+                    video_url,
+                    "succeeded",
+                ]
+            os.remove(video_filename)
         else:
             post_message_to_slack(
                 channel_id,
                 thread_ts,
                 f"*Failed to upload video*\n```{upload_response}```",
             )
-            write_data = [
-                str(datetime.now()),
-                video["name"],
-                video["url"],
-                event.get("text", ""),
-                "",
-                "failed",
-            ]
+            if is_local:
+                write_data = [
+                    str(datetime.now()),
+                    video_filename,
+                    video_filename,
+                    "\n".join(event.get("text", "").split("\n")[1:]),
+                    video_url,
+                    "failed",
+                ]
+            else:
+                write_data = [
+                    str(datetime.now()),
+                    video["name"],
+                    video["url"],
+                    event.get("text", ""),
+                    video_url,
+                    "failed",
+                ]
 
         sheet = get_google_sheet()
         sheet.append_row(write_data)
@@ -197,7 +229,6 @@ def handle_message_events(body, say):
 
 
 def find_latest_video(message):
-    extensions = [".mov", ".MOV", ".mp4", ".MP4"]
     for file in message.get("files", []):
         for ext in extensions:
             if file["url_private"].endswith(ext):
@@ -211,13 +242,12 @@ def download_slack_file(file_url):
     response = requests.get(file_url, headers=headers)
     response.raise_for_status()
 
-    ext = file_url.split(".")[-1]
-    if os.path.exists(f"video.{ext}"):
-        os.remove(f"video.{ext}")
-    with open(f"video.{ext}", "wb") as f:
-        f.write(response.content)
+    file_name = file_url.split("/")[-1]
+    if not os.path.exists(file_name):
+        with open(file_name, "wb") as f:
+            f.write(response.content)
     print(f"video-backup: Downloaded file from {file_url}")
-    return f"video.{ext}"
+    return file_name
 
 
 def upload_video_to_youtube(filename, title, description):
