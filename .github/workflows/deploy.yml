@@ -21,3 +21,4 @@ jobs:
                       ~/.local/bin/uv venv
                       source .venv/bin/activate
                       ~/.local/bin/uv sync
+                      ~/.volta/bin/pm2 start pm2.config.json
