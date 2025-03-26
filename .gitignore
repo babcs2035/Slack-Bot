@@ -1,11 +1,10 @@
 .env
-venv/
+.venv/
 __pycache__/
 data/
 selenium/
 client_secret.json
 service_account.json
 youtube_token.json
-thread_status.pkl
 *.mp4
 *.mov

@@ -8,17 +8,16 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v4
             - name: deploy via ssh
               uses: appleboy/ssh-action@master
               with:
-                  key: ${{ secrets.SK }}
-                  host: ${{secrets.SSH_HOST}}
-                  username: ${{secrets.SSH_USERNAME}}
-                  port: ${{secrets.SSH_PORT}}
+                  key: ${{ secrets.SSH_KEY }}
+                  host: ${{ secrets.SSH_HOST }}
+                  username: ${{ secrets.SSH_USERNAME }}
+                  port: ${{ secrets.SSH_PORT }}
                   script: |
-                      echo Started to deploy...
-                      cd ~/bots/Slack-Bot/
+                      cd ${{ secrets.REMOTE_PATH }}
                       git pull
-                      ~/.volta/bin/pm2 restart Slack-Bot --update-env
-                      echo Done!
+                      ~/.local/bin/uv venv
+                      source .venv/bin/activate
+                      ~/.local/bin/uv sync

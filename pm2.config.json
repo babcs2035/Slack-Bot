@@ -1,4 +1,4 @@
 {
   "name": "Slack-Bot",
-  "script": "./run.sh"
+  "script": "~/.local/bin/uv run ./src/main.py"
 }

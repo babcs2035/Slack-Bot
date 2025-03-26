@@ -85,7 +85,7 @@ def youtube_auth():
 
 
 # ファイル名を定義
-status_file = "thread_status.pkl"
+status_file = "data/video-backup/thread_status.pkl"
 
 
 # ステータスを読み込む関数
@@ -290,4 +290,4 @@ def post_message_to_slack(channel_id, thread_ts, message):
 
 
 if __name__ == "__main__":
-    bolt_app.start(port=int(os.environ.get("PORT", 8000)))
+    bolt_app.start(port=int(os.environ.get("BOLT_APP_PORT", 8000)))
