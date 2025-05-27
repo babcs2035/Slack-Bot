@@ -24,7 +24,8 @@ def setup_chrome_driver():
     os.makedirs(userdata_dir, exist_ok=True)
     print(f"🔧 MF: Created userdata directory at {userdata_dir}")
 
-    chromedriver_autoinstaller.install()
+    chromedriver_path = chromedriver_autoinstaller.install()
+    service = Service(executable_path=chromedriver_path)
     options = Options()
     options.binary_location = "/usr/bin/chromium"
     options.add_argument("--user-data-dir=" + userdata_dir)
@@ -43,7 +44,7 @@ def setup_chrome_driver():
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
     print("⚙️ MF: WebDriver options set")
-    driver = webdriver.Chrome(options=options)
+    driver = webdriver.Chrome(service=service, options=options)
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     )
