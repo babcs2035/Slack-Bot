@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.schedulers.blocking import BlockingScheduler
+import chromedriver_autoinstaller
 
 sched = BlockingScheduler(
     executors={
@@ -23,7 +24,7 @@ def setup_chrome_driver():
     os.makedirs(userdata_dir, exist_ok=True)
     print(f"🔧 MF: Created userdata directory at {userdata_dir}")
 
-    service = Service("/usr/bin/chromedriver")
+    chromedriver_autoinstaller.install()
     options = Options()
     options.binary_location = "/usr/bin/chromium"
     options.add_argument("--user-data-dir=" + userdata_dir)
@@ -42,7 +43,7 @@ def setup_chrome_driver():
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
     print("⚙️ MF: WebDriver options set")
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = webdriver.Chrome(options=options)
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     )
