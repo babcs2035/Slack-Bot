@@ -12,7 +12,6 @@ from bs4 import BeautifulSoup
 from slack_sdk import WebClient
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.schedulers.blocking import BlockingScheduler
-import chromedriver_autoinstaller
 
 sched = BlockingScheduler(
     executors={
@@ -31,8 +30,6 @@ def init():
     os.makedirs(userdata_dir, exist_ok=True)
     print(f"🔧 UTOL: Created userdata directory at {userdata_dir}")
 
-    chromedriver_path = chromedriver_autoinstaller.install()
-    service = Service(executable_path=chromedriver_path)
     options = Options()
     options.binary_location = "/usr/bin/chromium"
     options.add_argument("--user-data-dir=" + userdata_dir)
@@ -50,7 +47,7 @@ def init():
     options.add_experimental_option("useAutomationExtension", False)
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = webdriver.Chrome(options=options)
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     )
