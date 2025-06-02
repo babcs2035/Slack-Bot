@@ -18,7 +18,7 @@ print("🟢 expo: started")
 API_URL = "https://ticket.expo2025.or.jp/api/d/schedules/2025/6"
 COOKIE = os.environ["EXPO_COOKIE"]
 SLACK_WEBHOOK_URL = os.environ["EXPO_SLACK_WEBHOOK_URL"]
-TARGET_DAYS = ["19", "20"]
+TARGET_DAYS = ["20"]
 TARGET_TIME = "0700"
 STATE_FILE = Path("previous_state.json")
 
