@@ -9,7 +9,7 @@ subprocess.Popen(["python3", "-u", "src/UTOL.py"])
 subprocess.Popen(["python3", "-u", "src/MF.py"])
 subprocess.Popen(["python3", "-u", "src/video-backup.py"])
 subprocess.Popen(["python3", "-u", "src/api.py"])
-subprocess.Popen(["python3", "-u", "src/expo.py"])
+# subprocess.Popen(["python3", "-u", "src/expo.py"])
 
 print("main: initialized")
 
