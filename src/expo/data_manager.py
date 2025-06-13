@@ -1,3 +1,5 @@
+# data_manager.py
+
 import logging
 
 # Set up logging
@@ -55,52 +57,49 @@ class DataManager:
         """
         Applies delta updates from add.json to the current data.
         Returns a dictionary of detected changes: {code: {time: (old_status, new_status)}, ...}
+
+        This method is optimized to detect *actual* changes in status compared to
+        what is currently stored in self.current_status_only.
         """
         if not add_json:
-            # logging.debug("No add_json provided for updates.") # Too verbose for 1-second interval
             return {}
 
         detected_changes = {}
 
         for code, updates in add_json.items():
+            # Ensure the pavilion exists in our current data before trying to update
             if code in self.current_pavilion_data:
-                pavilion = self.current_pavilion_data[code]
+                pavilion_schedules = self.current_pavilion_data[code]["schedules"]
                 pavilion_status_only = self.current_status_only[code]
 
                 for update in updates:
-                    time = update.get("t")
+                    time_slot = update.get("t")
                     new_status = update.get("s")
 
-                    if time is not None and new_status is not None:
-                        old_status = pavilion_status_only.get(time)
+                    if time_slot is not None and new_status is not None:
+                        old_status = pavilion_status_only.get(
+                            time_slot
+                        )  # Get current known status
 
-                        if old_status is None:
-                            # New time slot added or first time seeing this slot
-                            pavilion["schedules"][time] = new_status
-                            pavilion_status_only[time] = new_status
-                            # Consider this a change if it's new and has a status
-                            if new_status is not None:
-                                if code not in detected_changes:
-                                    detected_changes[code] = {}
-                                detected_changes[code][time] = (
-                                    None,
-                                    new_status,
-                                )  # None for old_status indicates new slot
-                                logging.debug(
-                                    f"New time slot for {code} at {time}: {new_status}"
-                                )
-                        elif old_status != new_status:
-                            # Status has changed
-                            pavilion["schedules"][time] = new_status
-                            pavilion_status_only[time] = new_status
+                        # Only proceed if the new status is different from the old one
+                        if old_status != new_status:
+                            # Update the stored status
+                            pavilion_schedules[time_slot] = new_status
+                            pavilion_status_only[time_slot] = new_status
+
+                            # Record the change
                             if code not in detected_changes:
                                 detected_changes[code] = {}
-                            detected_changes[code][time] = (old_status, new_status)
+                            detected_changes[code][time_slot] = (old_status, new_status)
                             logging.debug(
-                                f"Status changed for {code} at {time}: {old_status} -> {new_status}"
+                                f"Status changed for {code} at {time_slot}: {old_status} -> {new_status}"
                             )
-            else:
-                logging.debug(f"Received update for unknown pavilion code: {code}")
+                        # else:
+                        # If old_status == new_status, it's not a new change, so we do nothing.
+                        # This is crucial for preventing duplicate notifications.
+            # else:
+            # This case is handled by data_manager, just log if needed
+            # logging.debug(f"Received update for unknown pavilion code: {code}")
 
         return detected_changes
 
@@ -123,26 +122,6 @@ class DataManager:
         """Returns the current status of a specific pavilion."""
         return self.current_pavilion_data.get(code, {}).get("schedules", {})
 
-    def search_pavilions_by_name(self, query):
-        """
-        Searches for pavilions whose names contain the given query string (case-insensitive).
-        Returns a list of dictionaries: [{"code": code, "name": name}, ...].
-        """
-        if not query:
-            return []
-
-        matching_pavilions = []
-        lower_query = query.lower()
-
-        for code, data in self.current_pavilion_data.items():
-            name = data.get("name", "")
-            if lower_query in name.lower():
-                matching_pavilions.append({"code": code, "name": name})
-
-        # Sort results by name for consistency
-        matching_pavilions.sort(key=lambda x: x["name"])
-        return matching_pavilions
-
 
 # Initialize data manager
 data_manager = DataManager()
@@ -151,46 +130,50 @@ if __name__ == "__main__":
     # Example usage:
     from data_fetcher import fetch_data_json, fetch_add_json
 
-    initial_data = fetch_data_json()
+    initial_data = [
+        {
+            "c": "HOH0",
+            "n": "Blue Ocean Dome",
+            "u": "url_hoh0",
+            "s": [{"t": "1040", "s": 2}],
+        },
+        {
+            "c": "CFR0",
+            "n": "Red Cross Pavilion",
+            "u": "url_cfr0",
+            "s": [{"t": "1824", "s": 0}],
+        },
+    ]
     data_manager.load_initial_data(initial_data)
-
-    # Simulate an update
-    sample_add_data = {
-        "HOH0": [{"t": "1040", "s": 1}],
-        "UNKNOWN_CODE": [{"t": "1200", "s": 2}],  # Test unknown code
-    }
-    changes = data_manager.apply_updates(sample_add_data)
-    logging.info(f"Detected changes after update: {changes}")
-
-    sample_add_data_2 = {
-        "HOH0": [
-            {"t": "1040", "s": 0},
-            {"t": "1100", "s": 1},
-        ],  # Change existing, add new time slot
-        "CFR0": [{"t": "1824", "s": 2}],  # No change for this slot
-    }
-    changes_2 = data_manager.apply_updates(sample_add_data_2)
-    logging.info(f"Detected changes after second update: {changes_2}")
-
-    # Check status
     logging.info(
-        f"Current status for HOH0: {data_manager.get_specific_pavilion_status('HOH0')}"
+        f"Initial status for HOH0: {data_manager.get_specific_pavilion_status('HOH0')}"
     )
-    logging.info(f"Name of HOH0: {data_manager.get_pavilion_name('HOH0')}")
-    logging.info(f"All pavilions count: {len(data_manager.get_all_pavilions_info())}")
 
-    # Add example for search function
-    logging.info("\n--- Search examples ---")
-    search_results_japan = data_manager.search_pavilions_by_name("日本館")
-    logging.info(f"Search '日本館': {search_results_japan}")
+    # Simulate an update where status changes (should notify)
+    sample_add_data_change = {"HOH0": [{"t": "1040", "s": 1}]}  # Change from 2 to 1
+    changes = data_manager.apply_updates(sample_add_data_change)
+    logging.info(
+        f"Detected changes (expected change): {changes}"
+    )  # Should show {'HOH0': {'1040': (2, 1)}}
 
-    search_results_kurage = data_manager.search_pavilions_by_name("クラゲ")
-    logging.info(f"Search 'クラゲ': {search_results_kurage}")
+    # Simulate an update where status is the same (should NOT notify)
+    sample_add_data_no_change = {
+        "HOH0": [{"t": "1040", "s": 1}]  # Still 1, no actual change
+    }
+    changes_no_notify = data_manager.apply_updates(sample_add_data_no_change)
+    logging.info(
+        f"Detected changes (expected no change): {changes_no_notify}"
+    )  # Should be {}
 
-    search_results_empty = data_manager.search_pavilions_by_name("")
-    logging.info(f"Search empty: {search_results_empty}")
+    # Simulate an update where status changes again
+    sample_add_data_revert_change = {
+        "HOH0": [{"t": "1040", "s": 2}]  # Change from 1 to 2
+    }
+    changes_revert = data_manager.apply_updates(sample_add_data_revert_change)
+    logging.info(
+        f"Detected changes (expected revert): {changes_revert}"
+    )  # Should show {'HOH0': {'1040': (1, 2)}}
 
-    search_results_nomatch = data_manager.search_pavilions_by_name(
-        "存在しないパビリオン"
+    logging.info(
+        f"Final status for HOH0: {data_manager.get_specific_pavilion_status('HOH0')}"
     )
-    logging.info(f"Search '存在しないパビリオン': {search_results_nomatch}")
