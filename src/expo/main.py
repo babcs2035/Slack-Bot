@@ -23,7 +23,9 @@ logging.basicConfig(
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
 # Channel ID for automatic notifications (e.g., pavilion status changes)
-SLACK_EXPO_NOTIFICATION_CHANNEL_ID = os.environ.get("SLACK_EXPO_NOTIFICATION_CHANNEL_ID")
+SLACK_EXPO_NOTIFICATION_CHANNEL_ID = os.environ.get(
+    "SLACK_EXPO_NOTIFICATION_CHANNEL_ID"
+)
 
 # Initialize Slack App in Socket Mode
 app = App(token=SLACK_BOT_TOKEN)
@@ -172,6 +174,30 @@ def handle_app_mention(say, body):
         thread_ts=body["event"]["ts"],
         text=f"Hello! I'm here to help you monitor Expo 2025 pavilion availability. Try `/help_expo` for commands. 🤖",
     )
+
+
+@app.event("message")
+def handle_message_events(body, logger, message):
+    """
+    Handles all 'message' events.
+    This listener is added to prevent 'Unhandled request' warnings for messages
+    that are not explicitly handled (e.g., bot_messages, channel messages without mention).
+    It filters out messages posted by bots to avoid infinite loops.
+    """
+    # Check if the message is from a bot itself (including this bot)
+    # or if it's a message type that typically doesn't need a direct response.
+    if message.get("subtype") == "bot_message":
+        logger.debug("Ignoring bot_message to prevent infinite loops.")
+        return  # Do nothing for bot messages
+
+    # You can add more specific filtering here if needed.
+    # For example, if you only want to log messages that are not mentions:
+    if "text" in message and app.client.auth_test()["user_id"] not in message.get(
+        "text", ""
+    ):
+        logger.info(f"Unhandled non-bot message: {message.get('text')}")
+    else:
+        logger.debug(f"Unhandled message event: {body}")
 
 
 @app.command("/help_expo")
