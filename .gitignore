@@ -8,3 +8,5 @@ service_account.json
 youtube_token.json
 *.mp4
 *.mov
+previous_state.json
+watched_pavilions.json
