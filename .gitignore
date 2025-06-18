@@ -10,3 +10,4 @@ youtube_token.json
 *.mov
 previous_state.json
 watched_pavilions.json
+user_ticket_ids.json

@@ -2,6 +2,7 @@ import os
 import threading
 import time
 import logging
+from datetime import datetime  # Import datetime for current date
 from dotenv import load_dotenv
 
 from slack_bolt import App
@@ -30,15 +31,18 @@ SLACK_EXPO_NOTIFICATION_CHANNEL_ID = os.environ.get(
 # Initialize Slack App in Socket Mode
 app = App(token=SLACK_BOT_TOKEN)
 
-
 # Mapping for status codes to human-readable strings and emojis
-STATUS_MAP = {2: "Unavailable ⛔️", 1: "Limited Availability ⚠️", 0: "Available ✅"}
+STATUS_MAP = {
+    2: "Unavailable ⛔️",
+    1: "Limited ⚠️",
+    0: "Available ✅",
+}
 
 # Mapping for status codes to colors
 STATUS_COLOR_MAP = {
-    2: "#FF6C6C",  # A soft red/pink for Unavailable
-    1: "#FFD34F",  # A yellowish-orange for Limited Availability
-    0: "#6BFF70",  # A soft green for Available
+    2: "#E0BBE4",  # Soft Red/Pink for Unavailable
+    1: "#FFD34F",  # Yellowish-Orange for Limited
+    0: "#A5D6A7",  # Soft Green for Available
 }
 
 
@@ -52,6 +56,35 @@ def get_status_color(status_code):
     return STATUS_COLOR_MAP.get(
         status_code, "#B0BEC5"
     )  # Light grey for unknown/default
+
+
+def get_expo_ticket_link(pavilion_id, ids_list):
+    """
+    Constructs the specific Expo ticket link.
+    Args:
+        pavilion_id (str): The ID of the pavilion (event_id).
+        ids_list (list): A list of user-specified IDs (e.g., ticket IDs).
+    Returns:
+        str: The constructed URL.
+    """
+    today_date_str = datetime.now().strftime(
+        "%Y%m%d"
+    )  # Format today's date as YYYYMMDD
+    ids_param = ",".join(ids_list) if ids_list else ""  # Join IDs with comma
+
+    # Base URL components
+    base_url = "https://ticket.expo2025.or.jp/event_time/"
+    params = {
+        "id": ids_param,
+        "event_id": pavilion_id,
+        "screen_id": "108",
+        "lottery": "5",
+        "entrance_date": today_date_str,
+    }
+
+    # Construct query string
+    query_string = "&".join([f"{k}={v}" for k, v in params.items() if v])
+    return f"{base_url}?{query_string}"
 
 
 def send_slack_notification(
@@ -115,7 +148,43 @@ def monitor_add_json():
             for code, time_changes in changes.items():
                 if code in watched_pavilion_manager.get_watched_list():
                     pavilion_name = data_manager.get_pavilion_name(code)
-                    pavilion_url = data_manager.get_pavilion_url(code)
+
+                    # Get user's ticket IDs to build the specific link
+                    # For simplicity, we'll use a generic placeholder or assume
+                    # a common set of IDs for notification.
+                    # A more complex bot would notify each user in a DM
+                    # using their specific IDs, but for channel notification,
+                    # we need a common approach.
+                    # Let's fetch IDs from the user who last set them or a default.
+                    # For a channel notification, we need a consistent set of IDs.
+                    # For this implementation, we will use a dummy ID for the URL,
+                    # as user-specific IDs in a public channel notification don't make sense.
+                    # If this is for per-user DM, we'd iterate over users watching this pavilion.
+
+                    # For now, we'll use a placeholder or assume a way to get a relevant ID list.
+                    # Let's assume the bot itself might have default IDs for general notifications.
+                    # Or, better: if a user is watching, maybe use *their* IDs if it's a DM.
+                    # Since it's a channel notification, we'll use a placeholder or empty list for the URL's `id` param.
+
+                    # If you want to use a specific user's IDs for the link in a public channel,
+                    # you'd need to decide *whose* IDs to use. For now, we'll make 'id' param empty
+                    # or you can set a default ID list in .env or config.
+
+                    # Let's adjust get_expo_ticket_link to be callable with just pavilion_id for general notifications
+                    # And use a hardcoded default ID for the link if none are set.
+                    # Or, even better, if it's a channel notification, just leave the `id` param empty
+                    # if no specific user's ID is contextually available.
+
+                    # Updated: `get_expo_ticket_link` now takes optional user_id,
+                    # and `monitor_add_json` will pass an empty list for channel notifications.
+                    # Users can set their IDs, but the public notification link will not include them by default.
+                    # If you want specific user IDs in the public notification,
+                    # you need to determine which user's IDs to use.
+
+                    # Pavilion ID is 'code' in our data
+                    current_expo_link = get_expo_ticket_link(
+                        pavilion_id=code, ids_list=[]
+                    )  # No user-specific IDs in public link by default
 
                     for time_slot, (old_status, new_status) in time_changes.items():
                         # Only notify if the status has actually changed meaningfully
@@ -130,7 +199,7 @@ def monitor_add_json():
                             notification_attachments = [
                                 {
                                     "color": attachment_color,
-                                    "title": f"🔔 {pavilion_name} ({code})",  # Title of the attachment
+                                    "title": f"{new_status_text[0]} {pavilion_name} ({code})",  # Title of the attachment
                                     "fields": [
                                         {
                                             "title": "Time Slot",
@@ -142,18 +211,14 @@ def monitor_add_json():
                                             "value": new_status_text,
                                             "short": True,
                                         },
+                                        {
+                                            "title": "Book URL",  # New field for the booking link
+                                            "value": f"<{current_expo_link}|Link>",
+                                            "short": True,
+                                        },
                                     ],
                                 }
                             ]
-
-                            if pavilion_url:
-                                notification_attachments[0]["fields"].append(
-                                    {
-                                        "title": "More Info",
-                                        "value": f"<{pavilion_url}|Link>",
-                                        "short": False,  # Not short, takes full width
-                                    }
-                                )
 
                             send_slack_notification(
                                 # text_message=f"Status update for {pavilion_name} at {time_slot[:2]}:{time_slot[2:]}",  # Fallback text
@@ -190,8 +255,6 @@ def handle_message_events(body, logger, message):
         logger.debug("Ignoring bot_message to prevent infinite loops.")
         return  # Do nothing for bot messages
 
-    # You can add more specific filtering here if needed.
-    # For example, if you only want to log messages that are not mentions:
     if "text" in message and app.client.auth_test()["user_id"] not in message.get(
         "text", ""
     ):
@@ -222,6 +285,7 @@ def handle_help_command(ack, respond, command):
                 "• `/watch_expo [CODE]` : Add a pavilion to your watch list. (e.g., `/watch_expo HOH0`) 👀\n"
                 "• `/unwatch_expo [CODE]` : Remove a pavilion from your watch list. (e.g., `/unwatch_expo HOH0`) 🚫\n"
                 "• `/list_watched_expo` : Show pavilions you are currently watching. 🔔\n"
+                "• `/set_ticket_ids [ID1,ID2,...]` : Set your personal ticket IDs for booking links. (e.g., `/set_ticket_ids 12345,67890`) 🎫\n"  # NEW COMMAND
                 "• `/show_status_expo [CODE]` : Show the current availability status for a specific pavilion. (e.g., `/show_status_expo HOH0`) 📊\n"
                 "I will notify you via Slack when the availability status of a watched pavilion changes! ✨",
             },
@@ -400,10 +464,50 @@ def list_watched_pavilions(ack, respond, command):
     )
 
 
+@app.command("/set_ticket_ids")
+def set_user_ticket_ids(ack, respond, command):
+    """
+    Allows a user to set their personal ticket IDs for booking links.
+    IDs should be comma-separated.
+    """
+    ack()
+    user_id = command["user_id"]
+    ids_string = command["text"].strip()
+
+    if not ids_string:
+        watched_pavilion_manager.set_user_ticket_ids(user_id, [])
+        respond(
+            text="Your ticket IDs have been cleared. To set new IDs, use `/set_ticket_ids [ID1,ID2,...]` 🎫",
+            response_type="ephemeral",
+            # thread_ts=command["event"]["ts"], # Removed for slash commands
+        )
+        return
+
+    # Split by comma and clean up whitespace
+    ids_list = [id.strip() for id in ids_string.split(",") if id.strip()]
+
+    if not ids_list:
+        respond(
+            text="No valid IDs found. Please provide comma-separated IDs. Example: `/set_ticket_ids 12345,67890` 🧐",
+            response_type="ephemeral",
+            # thread_ts=command["event"]["ts"], # Removed for slash commands
+        )
+        return
+
+    watched_pavilion_manager.set_user_ticket_ids(user_id, ids_list)
+    respond(
+        text=f"Your ticket IDs have been set to: `{', '.join(ids_list)}` ✅. This will be used for booking links.",
+        response_type="ephemeral",
+        # thread_ts=command["event"]["ts"], # Removed for slash commands
+    )
+    logging.info(f"User {user_id} set ticket IDs: {ids_list}")
+
+
 @app.command("/show_status_expo")
 def show_single_pavilion_status(ack, respond, command):
     """Shows the current status of a specified pavilion."""
     ack()
+    user_id = command["user_id"]  # Get user ID to fetch their specific ticket IDs
     args = command["text"].strip().split()
     if not args:
         respond(
@@ -435,6 +539,12 @@ def show_single_pavilion_status(ack, respond, command):
             response_type="ephemeral",
         )
         return
+
+    # Get user's specific ticket IDs for the link
+    user_ticket_ids_for_link = watched_pavilion_manager.get_user_ticket_ids(user_id)
+    current_expo_link = get_expo_ticket_link(
+        pavilion_id=code, ids_list=user_ticket_ids_for_link
+    )
 
     # Sort schedules by time
     sorted_schedules = sorted(schedules.items())
@@ -471,20 +581,32 @@ def show_single_pavilion_status(ack, respond, command):
         {"type": "divider"},
     ]
 
-    if pavilion_url:
+    # Add booking link in a section
+    message_blocks.append(
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Booking Link:* <{current_expo_link}|Click to Book> 🎟️",
+            },
+        }
+    )
+
+    # Add original pavilion URL if different and available (optional, might remove if link above is sufficient)
+    if pavilion_url and pavilion_url != current_expo_link:
         message_blocks.append(
             {
                 "type": "context",
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"*Code:* `{code}` | More info: <{pavilion_url}|Link to Pavilion Site>",
+                        "text": f"Original Pavilion Info: <{pavilion_url}|Link>",
                     }
                 ],
             }
         )
-        message_blocks.append({"type": "divider"})
 
+    message_blocks.append({"type": "divider"})
     message_blocks.append({"type": "section", "fields": status_fields})
 
     message_blocks.append({"type": "divider"})
@@ -505,7 +627,7 @@ def show_single_pavilion_status(ack, respond, command):
     respond(
         blocks=message_blocks,
         response_type="in_channel",
-        # thread_ts=command["event"]["ts"], # Removed for slash commands
+        thread_ts=command["event"]["ts"],
     )
 
 
