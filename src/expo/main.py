@@ -183,9 +183,9 @@ def monitor_add_json():
 
                     # Pavilion ID is 'code' in our data
                     user_ticket_ids_for_link = watched_pavilion_manager.get_user_ticket_ids("U055AN8LWF6")
-    current_expo_link = get_expo_ticket_link(
-        pavilion_id=code, ids_list=user_ticket_ids_for_link
-    )
+                    current_expo_link = get_expo_ticket_link(
+                        pavilion_id=code, ids_list=user_ticket_ids_for_link
+                    )
 
                     for time_slot, (old_status, new_status) in time_changes.items():
                         # Only notify if the status has actually changed meaningfully
