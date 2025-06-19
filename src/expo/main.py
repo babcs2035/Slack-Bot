@@ -33,9 +33,9 @@ app = App(token=SLACK_BOT_TOKEN)
 
 # Mapping for status codes to human-readable strings and emojis
 STATUS_MAP = {
-    2: "Unavailable ⛔️",
-    1: "Limited ⚠️",
-    0: "Available ✅",
+    2: "⛔️ Unavailable",
+    1: "⚠️ Limited",
+    0: "✅ Available",
 }
 
 # Mapping for status codes to colors
