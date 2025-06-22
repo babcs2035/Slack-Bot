@@ -1,16 +1,17 @@
 import os
 import pickle
-from slack_bolt import App
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
+from datetime import datetime
+
+import gspread
+import requests
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-import requests
-import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from datetime import datetime
+from slack_bolt import App
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 print("video-backup: started")
 
@@ -66,9 +67,7 @@ def get_youtube_service():
         youtube_auth()
 
     # Build the YouTube service
-    youtube = build(
-        YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials
-    )
+    youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, credentials=credentials)
     return youtube
 
 
@@ -78,10 +77,8 @@ def youtube_auth():
         ["https://www.googleapis.com/auth/youtube.upload"],
     )
     auth_url, _ = flow.authorization_url(access_type="offline", prompt="consent")
-    auth_url += f"&redirect_uri=https://ktak.dev/slack-bot-auth/usercallback"
-    raise Exception(
-        f"Credentials are not valid or expired. Please authorize at: {auth_url} "
-    )
+    auth_url += "&redirect_uri=https://ktak.dev/slack-bot-auth/usercallback"
+    raise Exception(f"Credentials are not valid or expired. Please authorize at: {auth_url} ")
 
 
 # ファイル名を定義
@@ -158,9 +155,7 @@ def handle_message_events(body, say):
                 terminate("Video not found")
                 return
             if check_if_video_exists(video["name"]):
-                post_message_to_slack(
-                    channel_id, thread_ts, "*This video has already been uploaded*"
-                )
+                post_message_to_slack(channel_id, thread_ts, "*This video has already been uploaded*")
                 terminate("This video has already been uploaded")
                 return
             video_filename = download_slack_file(video["url"])
@@ -173,9 +168,7 @@ def handle_message_events(body, say):
 
         if upload_response.get("id"):
             video_url = f"https://www.youtube.com/watch?v={upload_response['id']}"
-            post_message_to_slack(
-                channel_id, thread_ts, f"*Successfully uploaded video*\n{video_url}"
-            )
+            post_message_to_slack(channel_id, thread_ts, f"*Successfully uploaded video*\n{video_url}")
             if is_local:
                 write_data = [
                     str(datetime.now()),
@@ -262,9 +255,7 @@ def upload_video_to_youtube(filename, title, description):
     }
     media = MediaFileUpload(filename, mimetype="video/*", resumable=True)
     youtube = get_youtube_service()
-    request = youtube.videos().insert(
-        part="snippet,status", body=body, media_body=media
-    )
+    request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
     response = request.execute()
     return response
 
@@ -282,9 +273,7 @@ def check_if_video_exists(title):
 def post_message_to_slack(channel_id, thread_ts, message):
     client = WebClient(token=SLACK_BOT_TOKEN)
     try:
-        response = client.chat_postMessage(
-            channel=channel_id, thread_ts=thread_ts, text=message
-        )
+        response = client.chat_postMessage(channel=channel_id, thread_ts=thread_ts, text=message)
     except SlackApiError as e:
         print(f"video-backup: Failed to post message to Slack: {e.response['error']}")
 

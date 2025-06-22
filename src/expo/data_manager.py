@@ -3,9 +3,7 @@
 import logging
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 class DataManager:
@@ -36,9 +34,7 @@ class DataManager:
             url = item.get("u", "")
             schedules_list = item.get("s", [])
 
-            schedules_dict = {
-                s["t"]: s["s"] for s in schedules_list if "t" in s and "s" in s
-            }
+            schedules_dict = {s["t"]: s["s"] for s in schedules_list if "t" in s and "s" in s}
 
             new_pavilion_data[code] = {
                 "name": name,
@@ -49,9 +45,7 @@ class DataManager:
 
         self.current_pavilion_data = new_pavilion_data
         self.current_status_only = new_status_only
-        logging.info(
-            f"Successfully loaded initial data for {len(self.current_pavilion_data)} pavilions."
-        )
+        logging.info(f"Successfully loaded initial data for {len(self.current_pavilion_data)} pavilions.")
 
     def apply_updates(self, add_json):
         """
@@ -77,9 +71,7 @@ class DataManager:
                     new_status = update.get("s")
 
                     if time_slot is not None and new_status is not None:
-                        old_status = pavilion_status_only.get(
-                            time_slot
-                        )  # Get current known status
+                        old_status = pavilion_status_only.get(time_slot)  # Get current known status
 
                         # Only proceed if the new status is different from the old one
                         if old_status != new_status:
@@ -91,9 +83,7 @@ class DataManager:
                             if code not in detected_changes:
                                 detected_changes[code] = {}
                             detected_changes[code][time_slot] = (old_status, new_status)
-                            logging.debug(
-                                f"Status changed for {code} at {time_slot}: {old_status} -> {new_status}"
-                            )
+                            logging.debug(f"Status changed for {code} at {time_slot}: {old_status} -> {new_status}")
                         # else:
                         # If old_status == new_status, it's not a new change, so we do nothing.
                         # This is crucial for preventing duplicate notifications.
@@ -113,10 +103,7 @@ class DataManager:
 
     def get_all_pavilions_info(self):
         """Returns a list of all pavilions with their codes and names."""
-        return [
-            {"code": code, "name": data["name"]}
-            for code, data in self.current_pavilion_data.items()
-        ]
+        return [{"code": code, "name": data["name"]} for code, data in self.current_pavilion_data.items()]
 
     def get_specific_pavilion_status(self, code):
         """Returns the current status of a specific pavilion."""
@@ -127,9 +114,6 @@ class DataManager:
 data_manager = DataManager()
 
 if __name__ == "__main__":
-    # Example usage:
-    from data_fetcher import fetch_data_json, fetch_add_json
-
     initial_data = [
         {
             "c": "HOH0",
@@ -145,35 +129,25 @@ if __name__ == "__main__":
         },
     ]
     data_manager.load_initial_data(initial_data)
-    logging.info(
-        f"Initial status for HOH0: {data_manager.get_specific_pavilion_status('HOH0')}"
-    )
+    logging.info(f"Initial status for HOH0: {data_manager.get_specific_pavilion_status('HOH0')}")
 
     # Simulate an update where status changes (should notify)
     sample_add_data_change = {"HOH0": [{"t": "1040", "s": 1}]}  # Change from 2 to 1
     changes = data_manager.apply_updates(sample_add_data_change)
-    logging.info(
-        f"Detected changes (expected change): {changes}"
-    )  # Should show {'HOH0': {'1040': (2, 1)}}
+    logging.info(f"Detected changes (expected change): {changes}")  # Should show {'HOH0': {'1040': (2, 1)}}
 
     # Simulate an update where status is the same (should NOT notify)
     sample_add_data_no_change = {
         "HOH0": [{"t": "1040", "s": 1}]  # Still 1, no actual change
     }
     changes_no_notify = data_manager.apply_updates(sample_add_data_no_change)
-    logging.info(
-        f"Detected changes (expected no change): {changes_no_notify}"
-    )  # Should be {}
+    logging.info(f"Detected changes (expected no change): {changes_no_notify}")  # Should be {}
 
     # Simulate an update where status changes again
     sample_add_data_revert_change = {
         "HOH0": [{"t": "1040", "s": 2}]  # Change from 1 to 2
     }
     changes_revert = data_manager.apply_updates(sample_add_data_revert_change)
-    logging.info(
-        f"Detected changes (expected revert): {changes_revert}"
-    )  # Should show {'HOH0': {'1040': (1, 2)}}
+    logging.info(f"Detected changes (expected revert): {changes_revert}")  # Should show {'HOH0': {'1040': (1, 2)}}
 
-    logging.info(
-        f"Final status for HOH0: {data_manager.get_specific_pavilion_status('HOH0')}"
-    )
+    logging.info(f"Final status for HOH0: {data_manager.get_specific_pavilion_status('HOH0')}")

@@ -1,32 +1,28 @@
+import logging
 import os
 import threading
 import time
-import logging
 from datetime import datetime  # Import datetime for current date
-from dotenv import load_dotenv
 
+from data_fetcher import fetch_add_json, fetch_data_json
+from data_manager import data_manager
+from dotenv import load_dotenv
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
-
-from data_fetcher import fetch_data_json, fetch_add_json
-from data_manager import data_manager
 from watched_pavilions import watched_pavilion_manager
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Slack Bot Token and App Token
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN")
+
 # Channel ID for automatic notifications (e.g., pavilion status changes)
-SLACK_EXPO_NOTIFICATION_CHANNEL_ID = os.environ.get(
-    "SLACK_EXPO_NOTIFICATION_CHANNEL_ID"
-)
+SLACK_EXPO_NOTIFICATION_CHANNEL_ID = os.environ.get("SLACK_EXPO_NOTIFICATION_CHANNEL_ID")
 
 # Initialize Slack App in Socket Mode
 app = App(token=SLACK_BOT_TOKEN)
@@ -53,9 +49,7 @@ def get_status_text(status_code):
 
 def get_status_color(status_code):
     """Returns the color hex code for a given status."""
-    return STATUS_COLOR_MAP.get(
-        status_code, "#B0BEC5"
-    )  # Light grey for unknown/default
+    return STATUS_COLOR_MAP.get(status_code, "#B0BEC5")  # Light grey for unknown/default
 
 
 def get_expo_ticket_link(pavilion_id, ids_list):
@@ -67,9 +61,7 @@ def get_expo_ticket_link(pavilion_id, ids_list):
     Returns:
         str: The constructed URL.
     """
-    today_date_str = datetime.now().strftime(
-        "%Y%m%d"
-    )  # Format today's date as YYYYMMDD
+    today_date_str = datetime.now().strftime("%Y%m%d")  # Format today's date as YYYYMMDD
     ids_param = ",".join(ids_list) if ids_list else ""  # Join IDs with comma
 
     # Base URL components
@@ -87,9 +79,7 @@ def get_expo_ticket_link(pavilion_id, ids_list):
     return f"{base_url}?{query_string}"
 
 
-def send_slack_notification(
-    text_message=None, blocks=None, attachments=None, channel_id=None, thread_ts=None
-):
+def send_slack_notification(text_message=None, blocks=None, attachments=None, channel_id=None, thread_ts=None):
     """
     Sends a Slack message using Slack Bolt's web client.
     Args:
@@ -100,9 +90,7 @@ def send_slack_notification(
         thread_ts (str, optional): The timestamp of the parent message to reply to.
     """
     if not channel_id:
-        logging.error(
-            "Channel ID must be provided to send notifications via chat_postMessage."
-        )
+        logging.error("Channel ID must be provided to send notifications via chat_postMessage.")
         return
 
     try:
@@ -183,9 +171,7 @@ def monitor_add_json():
 
                     # Pavilion ID is 'code' in our data
                     user_ticket_ids_for_link = watched_pavilion_manager.get_user_ticket_ids("U055AN8LWF6")
-                    current_expo_link = get_expo_ticket_link(
-                        pavilion_id=code, ids_list=user_ticket_ids_for_link
-                    )
+                    current_expo_link = get_expo_ticket_link(pavilion_id=code, ids_list=user_ticket_ids_for_link)
 
                     for time_slot, (old_status, new_status) in time_changes.items():
                         # Only notify if the status has actually changed meaningfully
@@ -222,7 +208,7 @@ def monitor_add_json():
                             ]
 
                             send_slack_notification(
-                                # text_message=f"Status update for {pavilion_name} at {time_slot[:2]}:{time_slot[2:]}",  # Fallback text
+                                # text_message=f"Status update for {pavilion_name} at {time_slot[:2]}:{time_slot[2:]}",
                                 attachments=notification_attachments,
                                 channel_id=SLACK_EXPO_NOTIFICATION_CHANNEL_ID,
                             )
@@ -238,7 +224,7 @@ def handle_app_mention(say, body):
     # Replies in thread
     say(
         thread_ts=body["event"]["ts"],
-        text=f"Hello! I'm here to help you monitor Expo 2025 pavilion availability. Try `/help_expo` for commands. 🤖",
+        text="Hello! I'm here to help you monitor Expo 2025 pavilion availability. Try `/help_expo` for commands. 🤖",
     )
 
 
@@ -256,9 +242,7 @@ def handle_message_events(body, logger, message):
         logger.debug("Ignoring bot_message to prevent infinite loops.")
         return  # Do nothing for bot messages
 
-    if "text" in message and app.client.auth_test()["user_id"] not in message.get(
-        "text", ""
-    ):
+    if "text" in message and app.client.auth_test()["user_id"] not in message.get("text", ""):
         logger.info(f"Unhandled non-bot message: {message.get('text')}")
     else:
         logger.debug(f"Unhandled message event: {body}")
@@ -333,9 +317,7 @@ def list_all_pavilions(ack, respond, command):
         pavilion_list_text += f"• `{p['code']}`: {p['name']}\n"
 
     if pavilion_list_text:
-        message_blocks.append(
-            {"type": "section", "text": {"type": "mrkdwn", "text": pavilion_list_text}}
-        )
+        message_blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": pavilion_list_text}})
 
     message_blocks.append(
         {
@@ -369,9 +351,7 @@ def watch_pavilion(ack, respond, command):
 
     code = args[0].upper()
     pavilion_name = data_manager.get_pavilion_name(code)
-    if (
-        not pavilion_name or pavilion_name == code
-    ):  # Check if it's a valid known pavilion
+    if not pavilion_name or pavilion_name == code:  # Check if it's a valid known pavilion
         respond(
             # thread_ts=command["event"]["ts"], # Removed for slash commands
             text=f"Pavilion with code `{code}` not found. Please check `/list_all_expo` for valid codes. ❌",
@@ -454,9 +434,7 @@ def list_watched_pavilions(ack, respond, command):
         watched_list_text += f"• *{pavilion_name}* (`{code}`)\n"
 
     if watched_list_text:
-        message_blocks.append(
-            {"type": "section", "text": {"type": "mrkdwn", "text": watched_list_text}}
-        )
+        message_blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": watched_list_text}})
 
     respond(
         blocks=message_blocks,
@@ -522,9 +500,7 @@ def show_single_pavilion_status(ack, respond, command):
     pavilion_name = data_manager.get_pavilion_name(code)
     pavilion_url = data_manager.get_pavilion_url(code)
 
-    if (
-        not pavilion_name or pavilion_name == code
-    ):  # Check if it's a valid known pavilion
+    if not pavilion_name or pavilion_name == code:  # Check if it's a valid known pavilion
         respond(
             # thread_ts=command["event"]["ts"], # Removed for slash commands
             text=f"Pavilion with code `{code}` not found. Please check `/list_all_expo` for valid codes. ❌",
@@ -543,9 +519,7 @@ def show_single_pavilion_status(ack, respond, command):
 
     # Get user's specific ticket IDs for the link
     user_ticket_ids_for_link = watched_pavilion_manager.get_user_ticket_ids(user_id)
-    current_expo_link = get_expo_ticket_link(
-        pavilion_id=code, ids_list=user_ticket_ids_for_link
-    )
+    current_expo_link = get_expo_ticket_link(pavilion_id=code, ids_list=user_ticket_ids_for_link)
 
     # Sort schedules by time
     sorted_schedules = sorted(schedules.items())
@@ -679,9 +653,7 @@ def search_pavilions(ack, respond, command):
         search_list_text += f"• `{p['code']}`: {p['name']}\n"
 
     if search_list_text:
-        message_blocks.append(
-            {"type": "section", "text": {"type": "mrkdwn", "text": search_list_text}}
-        )
+        message_blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": search_list_text}})
 
     message_blocks.append(
         {
@@ -704,9 +676,7 @@ def search_pavilions(ack, respond, command):
 if __name__ == "__main__":
     # Ensure the notification channel ID is set
     if not SLACK_EXPO_NOTIFICATION_CHANNEL_ID:
-        logging.error(
-            "SLACK_EXPO_NOTIFICATION_CHANNEL_ID environment variable is not set. Notifications will not be sent."
-        )
+        logging.error("SLACK_EXPO_NOTIFICATION_CHANNEL_ID environment variable is not set. Notifications will not be sent.")
         # Exit if essential for notifications
         exit(1)
 
@@ -716,9 +686,7 @@ if __name__ == "__main__":
     if initial_data:
         data_manager.load_initial_data(initial_data)
     else:
-        logging.error(
-            "Failed to load initial data. Bot may not function correctly without it."
-        )
+        logging.error("Failed to load initial data. Bot may not function correctly without it.")
 
     # Start data monitoring threads
     data_thread = threading.Thread(target=monitor_data_json, daemon=True)

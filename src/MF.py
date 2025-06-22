@@ -1,12 +1,12 @@
 import os
+
+from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
+from apscheduler.schedulers.blocking import BlockingScheduler
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from apscheduler.schedulers.blocking import BlockingScheduler
 
 sched = BlockingScheduler(
     executors={
@@ -42,9 +42,7 @@ def setup_chrome_driver():
 
     print("⚙️ MF: WebDriver options set")
     driver = webdriver.Chrome(options=options)
-    driver.execute_script(
-        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-    )
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     driver.implicitly_wait(300)
     return driver
 
@@ -63,16 +61,12 @@ def login_to_moneyforward(driver):
     print("🚪 MF: Not logged in, navigating to sign in page")
     driver.get("https://moneyforward.com/sign_in")
 
-    input_id = wait.until(
-        EC.visibility_of_element_located((By.NAME, "mfid_user[email]"))
-    )
+    input_id = wait.until(EC.visibility_of_element_located((By.NAME, "mfid_user[email]")))
     print("🔑 MF: init() url: " + driver.current_url)
     input_id.send_keys(os.environ["MF_EMAIL"])
     print("💌 MF: init() input MF_EMAIL")
 
-    input_id = wait.until(
-        EC.visibility_of_element_located((By.NAME, "mfid_user[password]"))
-    )
+    input_id = wait.until(EC.visibility_of_element_located((By.NAME, "mfid_user[password]")))
     input_id.send_keys(os.environ["MF_PASSWORD"])
     print("🔒 MF: init() input MF_PASSWORD")
 
@@ -80,11 +74,7 @@ def login_to_moneyforward(driver):
     button_next.click()
     print("📤 MF: init() click submit button")
 
-    wait.until(
-        EC.visibility_of_element_located(
-            (By.ID, "js-cf-manual-payment-entry-submit-button")
-        )
-    )
+    wait.until(EC.visibility_of_element_located((By.ID, "js-cf-manual-payment-entry-submit-button")))
     if driver.title != "マネーフォワード ME":
         input_id = wait.until(EC.visibility_of_element_located((By.NAME, "email_otp")))
         otp = input("💬 MF: init() input OTP here: ")
@@ -94,11 +84,7 @@ def login_to_moneyforward(driver):
         button_next.click()
         print("📤 MF: init() click submit button")
 
-    wait.until(
-        EC.visibility_of_element_located(
-            (By.ID, "js-cf-manual-payment-entry-submit-button")
-        )
-    )
+    wait.until(EC.visibility_of_element_located((By.ID, "js-cf-manual-payment-entry-submit-button")))
     if driver.title != "マネーフォワード ME":
         print("❌ MF: init() failed to login")
         return False
@@ -123,11 +109,7 @@ def update_all(driver):
     wait = WebDriverWait(driver, 30)
 
     driver.get("https://moneyforward.com/")
-    wait.until(
-        EC.visibility_of_element_located(
-            (By.ID, "js-cf-manual-payment-entry-submit-button")
-        )
-    )
+    wait.until(EC.visibility_of_element_located((By.ID, "js-cf-manual-payment-entry-submit-button")))
     a_elements = driver.find_elements(By.TAG_NAME, "a")
     refreshed_cnt = 0
     for a_elem in a_elements:
@@ -149,9 +131,7 @@ if __name__ == "__main__":
         print("⚠️ MF: __main__ error: " + str(e))
 
 
-@sched.scheduled_job(
-    "cron", minute="15", hour="7", executor="threadpool", misfire_grace_time=60 * 60
-)
+@sched.scheduled_job("cron", minute="15", hour="7", executor="threadpool", misfire_grace_time=60 * 60)
 def scheduled_job():
     print("📅 MF: ----- update_all started -----")
     driver = init()

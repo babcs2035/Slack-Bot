@@ -1,17 +1,17 @@
-import os
 import json
+import os
 import pickle
 from time import sleep
+
+from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
+from apscheduler.schedulers.blocking import BlockingScheduler
+from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
-from bs4 import BeautifulSoup
 from slack_sdk import WebClient
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from apscheduler.schedulers.blocking import BlockingScheduler
 
 sched = BlockingScheduler(
     executors={
@@ -48,9 +48,7 @@ def init():
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
     driver = webdriver.Chrome(options=options)
-    driver.execute_script(
-        "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
-    )
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     wait = WebDriverWait(driver, 300)
     driver.implicitly_wait(300)
 
@@ -58,25 +56,16 @@ def init():
         driver.get("https://utol.ecc.u-tokyo.ac.jp/saml/login?disco=true")
         wait.until(EC.visibility_of_element_located((By.ID, "pageContents")))
         if driver.title != "時間割":
-
-            input_id = wait.until(
-                EC.visibility_of_element_located((By.NAME, "loginfmt"))
-            )
+            input_id = wait.until(EC.visibility_of_element_located((By.NAME, "loginfmt")))
             input_id.send_keys(os.environ["UTOKYO_ID"])
             print("🔑 UTOL: init() input UTOKYO_ID")
-            button_next = wait.until(
-                EC.visibility_of_element_located((By.ID, "idSIButton9"))
-            )
+            button_next = wait.until(EC.visibility_of_element_located((By.ID, "idSIButton9")))
             button_next.click()
 
-            input_password = wait.until(
-                EC.visibility_of_element_located((By.NAME, "Password"))
-            )
+            input_password = wait.until(EC.visibility_of_element_located((By.NAME, "Password")))
             input_password.send_keys(os.environ["UTOKYO_PASSWORD"])
             print("🔒 UTOL: init() input PASSWORD")
-            button_login = wait.until(
-                EC.visibility_of_element_located((By.CLASS_NAME, "submit"))
-            )
+            button_login = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "submit")))
             button_login.click()
             sleep(15)
 
@@ -92,21 +81,13 @@ def init():
 
             while driver.current_url == "https://login.microsoftonline.com/login.srf":
                 print("🔄 UTOL: init() /appverify")
-                onetime_code = wait.until(
-                    EC.visibility_of_element_located(
-                        (By.ID, "idRichContext_DisplaySign")
-                    )
-                )
+                onetime_code = wait.until(EC.visibility_of_element_located((By.ID, "idRichContext_DisplaySign")))
                 print("🔑 UTOL: init() one-time code issued ", onetime_code.text)
                 sleep(5)
 
-            check_button = wait.until(
-                EC.visibility_of_element_located((By.ID, "KmsiCheckboxField"))
-            )
+            check_button = wait.until(EC.visibility_of_element_located((By.ID, "KmsiCheckboxField")))
             check_button.click()
-            button_yes = wait.until(
-                EC.visibility_of_element_located((By.ID, "idSIButton9"))
-            )
+            button_yes = wait.until(EC.visibility_of_element_located((By.ID, "idSIButton9")))
             button_yes.click()
 
         print("✅ UTOL: init() done")
@@ -141,8 +122,7 @@ def getTaskList(driver):
                 "contents": task.contents[3].contents[1].text,
                 "title": task.contents[5].contents[1].text.replace("\n", ""),
                 "deadline": task.contents[7].contents[5].text,
-                "link": "https://utol.ecc.u-tokyo.ac.jp"
-                + task.contents[5].contents[1].attrs["href"],
+                "link": "https://utol.ecc.u-tokyo.ac.jp" + task.contents[5].contents[1].attrs["href"],
             }
         )
     print(f"✅ UTOL: getTaskList() found {len(taskList)} tasks")
@@ -183,9 +163,7 @@ def sendTasks(tasks):
 
 def getUpdates(driver):
     print("🔵 UTOL: getUpdates() started")
-    driver.get(
-        "https://utol.ecc.u-tokyo.ac.jp/updateinfo?openStatus=0&selectedUpdInfoButton=2"
-    )
+    driver.get("https://utol.ecc.u-tokyo.ac.jp/updateinfo?openStatus=0&selectedUpdInfoButton=2")
     sleep(15)
     soup = BeautifulSoup(driver.page_source, "html.parser")
     updates = soup.find_all(
@@ -202,8 +180,7 @@ def getUpdates(driver):
                 "course": data[5].text.replace("\n", ""),
                 "content": data[7].text.replace("\n", ""),
                 "info": data[9].text.replace("\n", "")[1:-18],
-                "link": "https://utol.ecc.u-tokyo.ac.jp"
-                + data[9].contents[1].attrs["value"],
+                "link": "https://utol.ecc.u-tokyo.ac.jp" + data[9].contents[1].attrs["value"],
             }
         )
     print(f"✅ UTOL: getUpdates() found {len(updateList)} updates")
@@ -255,9 +232,7 @@ def sendUpdates(updates):
     print("✅ UTOL: sendUpdates() saved updates")
 
 
-@sched.scheduled_job(
-    "cron", minute="45", hour="18", executor="threadpool", misfire_grace_time=60 * 60
-)
+@sched.scheduled_job("cron", minute="45", hour="18", executor="threadpool", misfire_grace_time=60 * 60)
 def scheduled_job_sendTasks():
     print("📅 UTOL: ----- sendTasks started -----")
     driver = init()
@@ -267,9 +242,7 @@ def scheduled_job_sendTasks():
     print("✅ UTOL: ----- sendTasks done -----")
 
 
-@sched.scheduled_job(
-    "cron", minute="0,10,20,30,40,50", executor="threadpool", misfire_grace_time=60 * 60
-)
+@sched.scheduled_job("cron", minute="0,10,20,30,40,50", executor="threadpool", misfire_grace_time=60 * 60)
 def scheduled_job_sendUpdates():
     print("📅 UTOL: ----- sendUpdates started -----")
     driver = init()

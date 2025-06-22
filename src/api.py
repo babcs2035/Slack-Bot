@@ -1,8 +1,9 @@
 import os
-from google_auth_oauthlib.flow import InstalledAppFlow
-from werkzeug.middleware.proxy_fix import ProxyFix
+
 from flask import Flask, request
+from google_auth_oauthlib.flow import InstalledAppFlow
 from waitress import serve
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 print("api: started")
 
@@ -17,9 +18,7 @@ flask_app = Flask(__name__)
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Apply ProxyFix middleware
-flask_app.wsgi_app = ProxyFix(
-    flask_app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1
-)
+flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
 
 # YouTube API の認証

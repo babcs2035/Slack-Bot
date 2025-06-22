@@ -1,11 +1,10 @@
-import requests
 import json
 import logging
 
+import requests
+
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # Base URL for the Expo API
 BASE_URL = "https://expo.ebii.net/api"
