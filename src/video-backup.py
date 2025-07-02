@@ -162,7 +162,7 @@ def handle_message_events(body, say):
 
         upload_response = upload_video_to_youtube(
             video_filename,
-            video_filename,
+            event.get("text", "").split("\n")[0] if event.get("text", "").split("\n") else video_filename,
             "\n".join(event.get("text", "").split("\n")[1:]),
         )
 
