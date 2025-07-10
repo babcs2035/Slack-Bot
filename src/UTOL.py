@@ -6,12 +6,13 @@ from time import sleep
 from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
 from apscheduler.schedulers.blocking import BlockingScheduler
 from bs4 import BeautifulSoup
+from slack_sdk import WebClient
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from slack_sdk import WebClient
 
 sched = BlockingScheduler(
     executors={
@@ -54,7 +55,7 @@ def init():
 
     try:
         driver.get("https://utol.ecc.u-tokyo.ac.jp/saml/login?disco=true")
-        wait.until(EC.visibility_of_element_located((By.ID, "pageContents")))
+        # wait.until(EC.visibility_of_element_located((By.ID, "pageContents")))
         if driver.title != "時間割":
             input_id = wait.until(EC.visibility_of_element_located((By.NAME, "loginfmt")))
             input_id.send_keys(os.environ["UTOKYO_ID"])
@@ -62,10 +63,10 @@ def init():
             button_next = wait.until(EC.visibility_of_element_located((By.ID, "idSIButton9")))
             button_next.click()
 
-            input_password = wait.until(EC.visibility_of_element_located((By.NAME, "Password")))
+            input_password = wait.until(EC.visibility_of_element_located((By.NAME, "passwd")))
             input_password.send_keys(os.environ["UTOKYO_PASSWORD"])
             print("🔒 UTOL: init() input PASSWORD")
-            button_login = wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "submit")))
+            button_login = wait.until(EC.visibility_of_element_located((By.ID, "idSIButton9")))
             button_login.click()
             sleep(15)
 
@@ -79,7 +80,7 @@ def init():
             #     # button_yes.click()
             #     sleep(5)
 
-            while driver.current_url == "https://login.microsoftonline.com/login.srf":
+            while driver.current_url.endswith("/login"):
                 print("🔄 UTOL: init() /appverify")
                 onetime_code = wait.until(EC.visibility_of_element_located((By.ID, "idRichContext_DisplaySign")))
                 print("🔑 UTOL: init() one-time code issued ", onetime_code.text)
